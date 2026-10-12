@@ -10,11 +10,21 @@ import { NotificationsTab } from './components/NotificationsTab';
 import { TransactionModal } from './components/TransactionModal';
 import { StudentToolsModal } from './components/StudentToolsModal';
 import { AuthModal } from './components/AuthModal';
-import { GraduationCap, Heart, Plus } from 'lucide-react';
+import {
+  GraduationCap,
+  Heart,
+  Plus,
+  LayoutDashboard,
+  Receipt,
+  PieChart,
+  Target,
+  Tags,
+} from 'lucide-react';
 
 const MainContent: React.FC = () => {
   const {
     activeTab,
+    setActiveTab,
     setIsAddTxModalOpen,
     isAuthenticated,
     setIsAuthModalOpen,
@@ -36,19 +46,19 @@ const MainContent: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col bg-linear-to-br from-sky-100/70 via-white/95 to-pink-100/70 text-slate-700">
+      <div className="min-h-dvh flex flex-col bg-linear-to-br from-sky-100/70 via-white/95 to-pink-100/70 text-slate-700">
         {/* Minimal Header with only Brand & Login button */}
-        <header className="w-full px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-linear-to-br from-sky-100 to-pink-100 flex items-center justify-center border border-sky-200/80 shadow-2xs">
+        <header className="w-full px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between max-w-7xl mx-auto">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-2xl bg-linear-to-br from-sky-100 to-pink-100 flex items-center justify-center border border-sky-200/80 shadow-2xs shrink-0">
               <GraduationCap className="w-5 h-5 text-sky-600" />
             </div>
-            <span className="text-base font-bold text-slate-800 tracking-tight">
+            <span className="text-sm sm:text-base font-bold text-slate-800 tracking-tight truncate">
               Quản lý chi tiêu
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               id="btn-header-login"
               type="button"
@@ -56,7 +66,7 @@ const MainContent: React.FC = () => {
                 setAuthModalMode('login');
                 setIsAuthModalOpen(true);
               }}
-              className="px-4 py-2 rounded-xl text-xs font-semibold bg-sky-100 hover:bg-sky-200/80 text-sky-800 border border-sky-200 transition shadow-2xs cursor-pointer"
+              className="px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-sky-100 hover:bg-sky-200/80 active:scale-95 text-sky-800 border border-sky-200 transition shadow-2xs cursor-pointer"
             >
               Đăng nhập
             </button>
@@ -67,7 +77,7 @@ const MainContent: React.FC = () => {
                 setAuthModalMode('register');
                 setIsAuthModalOpen(true);
               }}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-pink-700 bg-pink-100/70 hover:bg-pink-100 border border-pink-200/80 transition cursor-pointer"
+              className="px-3.5 sm:px-4 py-2 rounded-xl text-xs font-medium text-pink-700 bg-pink-100/70 hover:bg-pink-100 active:scale-95 border border-pink-200/80 transition cursor-pointer"
             >
               Đăng ký
             </button>
@@ -75,18 +85,18 @@ const MainContent: React.FC = () => {
         </header>
 
         {/* Centered Screen showing ONLY "Cùng nhau quản lý chi tiêu nhé" */}
-        <main className="flex-1 flex flex-col items-center justify-center px-4 text-center">
+        <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 text-center">
           <div
             onClick={() => {
               setAuthModalMode('login');
               setIsAuthModalOpen(true);
             }}
-            className="group cursor-pointer p-8 sm:p-12 rounded-3xl bg-white/80 backdrop-blur-md border border-sky-200/80 shadow-sm hover:shadow-md hover:border-pink-200 transition-all max-w-xl w-full"
+            className="group cursor-pointer p-7 sm:p-12 rounded-3xl bg-white/85 backdrop-blur-md border border-sky-200/80 shadow-sm hover:shadow-md active:scale-[0.99] hover:border-pink-200 transition-all max-w-xl w-full"
           >
-            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-sky-100 to-pink-100 border border-sky-200/70 flex items-center justify-center mx-auto mb-5 shadow-2xs group-hover:scale-105 transition">
+            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-sky-100 to-pink-100 border border-sky-200/70 flex items-center justify-center mx-auto mb-4 sm:mb-5 shadow-2xs group-hover:scale-105 transition">
               <Heart className="w-6 h-6 text-pink-500" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-sky-600 to-pink-500 bg-clip-text text-transparent tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-bold bg-linear-to-r from-sky-600 to-pink-500 bg-clip-text text-transparent tracking-tight leading-snug">
               Cùng nhau quản lý chi tiêu nhé
             </h1>
           </div>
@@ -98,12 +108,12 @@ const MainContent: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${activeBgClass} text-slate-700`}>
+    <div className={`min-h-dvh flex flex-col transition-colors duration-300 ${activeBgClass} text-slate-700 pb-20 sm:pb-0`}>
       {/* Top slidebar navigation containing all requested tabs & functions */}
       <TopSlidebar />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6">
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'transactions' && <TransactionsTab />}
         {activeTab === 'statistics' && <StatisticsTab />}
@@ -112,16 +122,90 @@ const MainContent: React.FC = () => {
         {activeTab === 'notifications' && <NotificationsTab />}
       </main>
 
-      {/* Floating Quick Action Button on Mobile */}
-      <div className="sm:hidden fixed bottom-5 right-5 z-20">
-        <button
-          onClick={() => setIsAddTxModalOpen(true)}
-          className="w-13 h-13 rounded-full bg-linear-to-r from-sky-300 to-pink-300 text-slate-800 border border-white flex items-center justify-center shadow-lg active:scale-95 transition"
-          aria-label="Thêm giao dịch"
-        >
-          <Plus className="w-6 h-6" />
-        </button>
-      </div>
+      {/* Mobile Bottom Navigation Bar + Quick Add Button */}
+      <nav
+        aria-label="Điều hướng di động"
+        className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-sky-200/80 shadow-lg px-2 pt-1.5 pb-safe"
+      >
+        <div className="grid grid-cols-6 items-center gap-0.5 max-w-md mx-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+              activeTab === 'overview'
+                ? 'text-sky-700 bg-sky-50/90'
+                : 'text-slate-500 active:bg-slate-50'
+            }`}
+          >
+            <LayoutDashboard className={`w-4 h-4 mb-0.5 ${activeTab === 'overview' ? 'text-sky-600' : 'text-slate-400'}`} />
+            <span className="truncate">Tổng quan</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('transactions')}
+            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+              activeTab === 'transactions'
+                ? 'text-sky-700 bg-sky-50/90'
+                : 'text-slate-500 active:bg-slate-50'
+            }`}
+          >
+            <Receipt className={`w-4 h-4 mb-0.5 ${activeTab === 'transactions' ? 'text-sky-600' : 'text-slate-400'}`} />
+            <span className="truncate">Giao dịch</span>
+          </button>
+
+          {/* Center Quick Add Transaction Button */}
+          <div className="flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => setIsAddTxModalOpen(true)}
+              className="w-11 h-11 -mt-3 rounded-full bg-linear-to-r from-sky-300 to-pink-300 text-slate-800 border-2 border-white flex items-center justify-center shadow-md active:scale-95 transition"
+              aria-label="Thêm giao dịch"
+            >
+              <Plus className="w-5 h-5 text-slate-800" />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('statistics')}
+            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+              activeTab === 'statistics'
+                ? 'text-sky-700 bg-sky-50/90'
+                : 'text-slate-500 active:bg-slate-50'
+            }`}
+          >
+            <PieChart className={`w-4 h-4 mb-0.5 ${activeTab === 'statistics' ? 'text-pink-500' : 'text-slate-400'}`} />
+            <span className="truncate">Thống kê</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('budget')}
+            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+              activeTab === 'budget'
+                ? 'text-sky-700 bg-sky-50/90'
+                : 'text-slate-500 active:bg-slate-50'
+            }`}
+          >
+            <Target className={`w-4 h-4 mb-0.5 ${activeTab === 'budget' ? 'text-pink-500' : 'text-slate-400'}`} />
+            <span className="truncate">Ngân sách</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('categories')}
+            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+              activeTab === 'categories'
+                ? 'text-sky-700 bg-sky-50/90'
+                : 'text-slate-500 active:bg-slate-50'
+            }`}
+          >
+            <Tags className={`w-4 h-4 mb-0.5 ${activeTab === 'categories' ? 'text-sky-600' : 'text-slate-400'}`} />
+            <span className="truncate">Danh mục</span>
+          </button>
+        </div>
+      </nav>
 
       {/* Footer */}
       <footer className="border-t border-sky-200/60 bg-white/85 backdrop-blur-md py-6 text-center text-xs text-slate-500">

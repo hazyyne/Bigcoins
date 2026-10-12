@@ -113,263 +113,266 @@ export const TopSlidebar: React.FC = () => {
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-sky-200/70 shadow-xs">
       {/* Top Main Brand Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 pb-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Brand & Target Audience */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-sky-100 to-pink-100 text-sky-700 flex items-center justify-center shadow-xs border border-sky-200/80">
-              <Wallet className="w-5 h-5 text-sky-600" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-slate-800">
-                  Quản lý chi tiêu
-                </h1>
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-2.5 pb-2.5">
+        <div className="flex flex-col gap-2.5">
+          {/* Row 1: Brand on Left + Top-Right Corner Controls (Bell & Circular Avatar always in top-right on both Mobile & Desktop) */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Brand & Balance Summary */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-sky-100 to-pink-100 text-sky-700 flex items-center justify-center shadow-xs border border-sky-200/80 shrink-0">
+                <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-sky-600" />
               </div>
-              <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                {currentUser ? (
-                  <>
-                    <span>
-                      Số dư:{' '}
-                      <strong className="text-sky-700 font-semibold">
-                        {formatVND(totalBalance)}
-                      </strong>
-                    </span>
-                    <span className="text-slate-300">•</span>
-                    <span>
-                      Chi tháng:{' '}
-                      <strong className="text-pink-600 font-medium">
-                        {formatVND(monthlyExpense)}
-                      </strong>
-                    </span>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthModalMode('login');
-                      setIsAuthModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 text-slate-500 hover:text-sky-700 transition cursor-pointer"
-                    title="Đăng nhập để xem số dư và chi tiết tài chính"
-                  >
-                    <span>Số dư: <strong className="text-slate-400 font-mono">••••••• ₫</strong></span>
-                    <span className="text-slate-300">•</span>
-                    <span className="text-sky-600 font-semibold underline">
-                      Đăng nhập để hiện số tiền
-                    </span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Action Tools & Month Switcher */}
-          <div className="flex items-center flex-wrap gap-2">
-            {/* Month Switcher */}
-            <div className="flex items-center bg-sky-50/80 rounded-xl p-1 border border-sky-200/70 text-xs text-slate-700">
-              <button
-                id="btn-prev-month"
-                onClick={handlePrevMonth}
-                className="p-1 rounded-lg hover:bg-white hover:shadow-xs transition text-sky-700"
-                title="Tháng trước"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="px-2 font-medium min-w-[95px] text-center text-slate-700">
-                {displayMonthName}
-              </span>
-              <button
-                id="btn-next-month"
-                onClick={handleNextMonth}
-                className="p-1 rounded-lg hover:bg-white hover:shadow-xs transition text-sky-700"
-                title="Tháng sau"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Student Split & Tips Button */}
-            <button
-              id="btn-student-tools"
-              onClick={() => setIsStudentToolOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-pink-50 text-pink-700 border border-pink-200/80 hover:bg-pink-100 transition shadow-xs"
-              title="Công cụ chia tiền phòng trọ và mẹo sinh viên"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-pink-500" />
-              <span className="hidden sm:inline">Chia tiền trọ & Mẹo SV</span>
-              <span className="sm:hidden">Mẹo SV</span>
-            </button>
-
-            {/* Add Transaction Button */}
-            <button
-              id="btn-add-transaction"
-              onClick={() => setIsAddTxModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-linear-to-r from-sky-200/90 to-pink-200/90 text-slate-800 border border-sky-300/80 hover:from-sky-200 hover:to-pink-200 transition shadow-2xs active:scale-95"
-            >
-              <Plus className="w-4 h-4 text-sky-700" />
-              <span>Thêm giao dịch</span>
-            </button>
-
-            {/* Top-Right Corner: Reset Sample Data, Compact Bell Notification Icon & Circular User Profile */}
-            <div className="flex items-center gap-2 border-l border-sky-200/70 pl-2.5 ml-1">
-              <button
-                id="btn-reset-data"
-                onClick={() => {
-                  if (window.confirm('Khôi phục dữ liệu mẫu ban đầu?')) {
-                    resetToDefaults();
-                  }
-                }}
-                className="p-2 rounded-full text-slate-500 hover:text-pink-600 hover:bg-pink-50 transition cursor-pointer"
-                title="Khôi phục dữ liệu mẫu"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-
-              {/* Compact Bell Icon (Thông báo thu nhỏ hình cái chuông ở góc phải trên cùng) */}
-              <div className="relative" ref={notifMenuRef}>
-                <button
-                  id="btn-top-right-bell"
-                  type="button"
-                  onClick={() => setIsNotifMenuOpen(!isNotifMenuOpen)}
-                  className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-all cursor-pointer shadow-2xs ${
-                    isNotifMenuOpen || activeTab === 'notifications'
-                      ? 'bg-pink-100 border-pink-300 text-pink-700 shadow-xs'
-                      : 'bg-sky-50/90 border-sky-200/80 text-sky-700 hover:bg-pink-50 hover:border-pink-200 hover:text-pink-600'
-                  }`}
-                  title="Thông báo"
-                >
-                  <Bell className="w-4 h-4" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-2xs">
-                      {unreadCount}
-                    </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base sm:text-xl font-bold tracking-tight text-slate-800 truncate">
+                    Quản lý chi tiêu
+                  </h1>
+                </div>
+                <div className="text-[11px] sm:text-xs text-slate-500 flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                  {currentUser ? (
+                    <>
+                      <span className="truncate">
+                        Số dư:{' '}
+                        <strong className="text-sky-700 font-semibold">
+                          {formatVND(totalBalance)}
+                        </strong>
+                      </span>
+                      <span className="text-slate-300 hidden xs:inline">•</span>
+                      <span className="truncate">
+                        Chi:{' '}
+                        <strong className="text-pink-600 font-medium">
+                          {formatVND(monthlyExpense)}
+                        </strong>
+                      </span>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthModalMode('login');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 text-slate-500 hover:text-sky-700 transition cursor-pointer"
+                      title="Đăng nhập để xem số dư và chi tiết tài chính"
+                    >
+                      <span>Số dư: <strong className="text-slate-400 font-mono">••••••• ₫</strong></span>
+                    </button>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Area: Desktop Action Tools + Always-Top-Right Bell & Circular User Avatar */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Desktop Month Switcher & Action Buttons */}
+              <div className="hidden md:flex items-center gap-2">
+                <div className="flex items-center bg-sky-50/80 rounded-xl p-1 border border-sky-200/70 text-xs text-slate-700">
+                  <button
+                    id="btn-prev-month"
+                    onClick={handlePrevMonth}
+                    className="p-1 rounded-lg hover:bg-white hover:shadow-xs transition text-sky-700"
+                    title="Tháng trước"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="px-2 font-medium min-w-[95px] text-center text-slate-700">
+                    {displayMonthName}
+                  </span>
+                  <button
+                    id="btn-next-month"
+                    onClick={handleNextMonth}
+                    className="p-1 rounded-lg hover:bg-white hover:shadow-xs transition text-sky-700"
+                    title="Tháng sau"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <button
+                  id="btn-student-tools"
+                  onClick={() => setIsStudentToolOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-pink-50 text-pink-700 border border-pink-200/80 hover:bg-pink-100 transition shadow-xs"
+                  title="Công cụ chia tiền phòng trọ và mẹo tài chính"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-pink-500" />
+                  <span>Chia tiền & Mẹo</span>
                 </button>
 
-                {/* Compact Bell Notification Popover */}
-                {isNotifMenuOpen && (
-                  <div className="absolute right-0 mt-2.5 w-80 sm:w-96 bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-sky-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-sky-100">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center">
-                          <Bell className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-xs font-bold text-slate-800">Thông báo</span>
-                        {unreadCount > 0 && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-100 text-pink-700">
-                            {unreadCount} mới
-                          </span>
-                        )}
-                      </div>
-                      {unreadCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={markAllNotificationsRead}
-                          className="text-[11px] font-semibold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer"
-                        >
-                          <CheckCheck className="w-3.5 h-3.5" />
-                          Đọc tất cả
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
-                      {notifications.length === 0 ? (
-                        <div className="py-8 text-center text-xs text-slate-400">
-                          Không có thông báo nào
-                        </div>
-                      ) : (
-                        notifications.map((n) => (
-                          <div
-                            key={n.id}
-                            onClick={() => markNotificationRead(n.id)}
-                            className={`p-2.5 rounded-2xl border transition cursor-pointer flex items-start justify-between gap-2 ${
-                              n.isRead
-                                ? 'bg-slate-50/70 border-slate-100 text-slate-500'
-                                : 'bg-linear-to-r from-sky-50/80 to-pink-50/70 border-sky-200/80 text-slate-800 shadow-2xs'
-                            }`}
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                {!n.isRead && (
-                                  <span className="w-2 h-2 rounded-full bg-pink-500 shrink-0" />
-                                )}
-                                <p className="text-xs font-bold truncate">{n.title}</p>
-                              </div>
-                              <p className="text-[11px] text-slate-600 mt-0.5 line-clamp-2">
-                                {n.message}
-                              </p>
-                              <span className="text-[10px] text-slate-400 mt-1 block">
-                                {n.date}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNotification(n.id);
-                              }}
-                              className="p-1 text-slate-400 hover:text-pink-600 rounded-lg hover:bg-pink-50 transition"
-                              title="Xóa thông báo"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    <div className="pt-2.5 mt-2.5 border-t border-sky-100 text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsNotifMenuOpen(false);
-                          setActiveTab('notifications');
-                        }}
-                        className="w-full py-1.5 rounded-xl text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 transition cursor-pointer"
-                      >
-                        Xem tất cả thông báo
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <button
+                  id="btn-add-transaction"
+                  onClick={() => setIsAddTxModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-linear-to-r from-sky-200/90 to-pink-200/90 text-slate-800 border border-sky-300/80 hover:from-sky-200 hover:to-pink-200 transition shadow-2xs active:scale-95"
+                >
+                  <Plus className="w-4 h-4 text-sky-700" />
+                  <span>Thêm giao dịch</span>
+                </button>
               </div>
 
-              {/* User Profile / Login & Logout Component in Top-Right Corner Circular Frame */}
-              <div className="flex items-center" ref={userMenuRef}>
-              {currentUser ? (
-                <div className="relative">
+              {/* Top-Right Corner: Reset Sample Data, Compact Bell Notification Icon & Circular User Profile */}
+              <div className="flex items-center gap-1.5 sm:gap-2 md:border-l md:border-sky-200/70 md:pl-2.5 md:ml-1">
+                <button
+                  id="btn-reset-data"
+                  onClick={() => {
+                    if (window.confirm('Khôi phục dữ liệu mẫu ban đầu?')) {
+                      resetToDefaults();
+                    }
+                  }}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-slate-500 hover:text-pink-600 hover:bg-pink-50 transition cursor-pointer"
+                  title="Khôi phục dữ liệu mẫu"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+
+                {/* Compact Bell Icon (Thông báo thu nhỏ hình cái chuông ở góc phải trên cùng) */}
+                <div className="relative" ref={notifMenuRef}>
                   <button
-                    id="btn-user-profile-menu"
+                    id="btn-top-right-bell"
                     type="button"
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="relative w-10 h-10 rounded-full p-0.5 bg-linear-to-tr from-sky-300 via-pink-300 to-sky-200 shadow-xs hover:shadow-md hover:scale-105 transition-all cursor-pointer flex items-center justify-center group"
-                    title={`Tài khoản: ${currentUser.name} (Nhấn để đổi hình nền & giới tính)`}
+                    onClick={() => {
+                      setIsNotifMenuOpen(!isNotifMenuOpen);
+                      setIsUserMenuOpen(false);
+                    }}
+                    className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all cursor-pointer shadow-2xs ${
+                      isNotifMenuOpen || activeTab === 'notifications'
+                        ? 'bg-pink-100 border-pink-300 text-pink-700 shadow-xs'
+                        : 'bg-sky-50/90 border-sky-200/80 text-sky-700 hover:bg-pink-50 hover:border-pink-200 hover:text-pink-600'
+                    }`}
+                    title="Thông báo"
                   >
-                    <div
-                      className="w-full h-full rounded-full text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-inner"
-                      style={{ backgroundColor: currentUser.avatarColor || '#38bdf8' }}
-                    >
-                      {currentUser.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    {/* Online & Gender indicator dot on circular frame */}
-                    <span
-                      className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-bold text-white ${
-                        currentUser.gender === 'male'
-                          ? 'bg-sky-500'
-                          : currentUser.gender === 'other'
-                          ? 'bg-purple-400'
-                          : 'bg-pink-400'
-                      }`}
-                    >
-                      {currentUser.gender === 'male' ? '♂' : currentUser.gender === 'other' ? '✦' : '♀'}
-                    </span>
+                    <Bell className="w-4 h-4" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-2xs">
+                        {unreadCount}
+                      </span>
+                    )}
                   </button>
 
-                  {/* Dropdown Menu with Gender & Background Theme Switcher */}
-                  {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2.5 w-80 bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-sky-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  {/* Compact Bell Notification Popover (Mobile Responsive Width) */}
+                  {isNotifMenuOpen && (
+                    <div className="fixed sm:absolute right-3 sm:right-0 top-14 sm:top-auto sm:mt-2.5 w-[calc(100vw-1.5rem)] max-w-sm bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-sky-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-sky-100">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center">
+                            <Bell className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="text-xs font-bold text-slate-800">Thông báo</span>
+                          {unreadCount > 0 && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-100 text-pink-700">
+                              {unreadCount} mới
+                            </span>
+                          )}
+                        </div>
+                        {unreadCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={markAllNotificationsRead}
+                            className="text-[11px] font-semibold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer"
+                          >
+                            <CheckCheck className="w-3.5 h-3.5" />
+                            Đọc tất cả
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
+                        {notifications.length === 0 ? (
+                          <div className="py-8 text-center text-xs text-slate-400">
+                            Không có thông báo nào
+                          </div>
+                        ) : (
+                          notifications.map((n) => (
+                            <div
+                              key={n.id}
+                              onClick={() => markNotificationRead(n.id)}
+                              className={`p-2.5 rounded-2xl border transition cursor-pointer flex items-start justify-between gap-2 ${
+                                n.isRead
+                                  ? 'bg-slate-50/70 border-slate-100 text-slate-500'
+                                  : 'bg-linear-to-r from-sky-50/80 to-pink-50/70 border-sky-200/80 text-slate-800 shadow-2xs'
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  {!n.isRead && (
+                                    <span className="w-2 h-2 rounded-full bg-pink-500 shrink-0" />
+                                  )}
+                                  <p className="text-xs font-bold truncate">{n.title}</p>
+                                </div>
+                                <p className="text-[11px] text-slate-600 mt-0.5 line-clamp-2">
+                                  {n.message}
+                                </p>
+                                <span className="text-[10px] text-slate-400 mt-1 block">
+                                  {n.date}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteNotification(n.id);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-pink-600 rounded-lg hover:bg-pink-50 transition"
+                                title="Xóa thông báo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="pt-2.5 mt-2.5 border-t border-sky-100 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsNotifMenuOpen(false);
+                            setActiveTab('notifications');
+                          }}
+                          className="w-full py-2 rounded-xl text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 transition cursor-pointer"
+                        >
+                          Xem tất cả thông báo
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* User Profile / Login & Logout Component in Top-Right Corner Circular Frame */}
+                <div className="flex items-center" ref={userMenuRef}>
+                  {currentUser ? (
+                    <div className="relative">
+                      <button
+                        id="btn-user-profile-menu"
+                        type="button"
+                        onClick={() => {
+                          setIsUserMenuOpen(!isUserMenuOpen);
+                          setIsNotifMenuOpen(false);
+                        }}
+                        className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full p-0.5 bg-linear-to-tr from-sky-300 via-pink-300 to-sky-200 shadow-xs hover:shadow-md hover:scale-105 transition-all cursor-pointer flex items-center justify-center group"
+                        title={`Tài khoản: ${currentUser.name} (Nhấn để đổi hình nền & giới tính)`}
+                      >
+                        <div
+                          className="w-full h-full rounded-full text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-inner"
+                          style={{ backgroundColor: currentUser.avatarColor || '#38bdf8' }}
+                        >
+                          {currentUser.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        {/* Online & Gender indicator dot on circular frame */}
+                        <span
+                          className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-bold text-white ${
+                            currentUser.gender === 'male'
+                              ? 'bg-sky-500'
+                              : currentUser.gender === 'other'
+                              ? 'bg-purple-400'
+                              : 'bg-pink-400'
+                          }`}
+                        >
+                          {currentUser.gender === 'male' ? '♂' : currentUser.gender === 'other' ? '✦' : '♀'}
+                        </span>
+                      </button>
+
+                      {/* Dropdown Menu with Gender & Background Theme Switcher */}
+                      {isUserMenuOpen && (
+                        <div className="fixed sm:absolute right-3 sm:right-0 top-14 sm:top-auto sm:mt-2.5 w-[calc(100vw-1.5rem)] max-w-xs bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-sky-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-150 max-h-[82vh] overflow-y-auto">
                       {/* Profile Header with Circular Avatar */}
                       <div className="flex items-center gap-3 p-3 bg-linear-to-r from-sky-50/90 to-pink-50/90 rounded-2xl border border-sky-100 mb-3">
                         <div
@@ -575,6 +578,49 @@ export const TopSlidebar: React.FC = () => {
                 </div>
               )}
               </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2 (Mobile Only): Month Switcher + Quick Action Buttons */}
+          <div className="flex md:hidden items-center justify-between gap-2 pt-1 border-t border-sky-100/80">
+            {/* Mobile Month Switcher */}
+            <div className="flex items-center bg-sky-50/90 rounded-xl p-1 border border-sky-200/70 text-xs text-slate-700 shrink-0">
+              <button
+                onClick={handlePrevMonth}
+                className="p-1.5 rounded-lg active:bg-white transition text-sky-700"
+                title="Tháng trước"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <span className="px-1.5 font-semibold text-[11px] min-w-[78px] text-center text-slate-700">
+                {displayMonthName}
+              </span>
+              <button
+                onClick={handleNextMonth}
+                className="p-1.5 rounded-lg active:bg-white transition text-sky-700"
+                title="Tháng sau"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setIsStudentToolOpen(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-[11px] font-semibold bg-pink-50 text-pink-700 border border-pink-200/80 active:bg-pink-100 transition"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-pink-500" />
+                <span>Chia tiền & Mẹo</span>
+              </button>
+
+              <button
+                onClick={() => setIsAddTxModalOpen(true)}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold bg-linear-to-r from-sky-200/90 to-pink-200/90 text-slate-800 border border-sky-300/80 active:scale-95 transition shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5 text-sky-700" />
+                <span>Thêm</span>
+              </button>
             </div>
           </div>
         </div>

@@ -171,14 +171,14 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem(STORAGE_KEYS.ALL_USERS, JSON.stringify(savedUsers));
   }, [savedUsers]);
 
-  const login = (emailOrId: string, _password?: string) => {
-    const trimmed = emailOrId.trim().toLowerCase();
-    const found = savedUsers.find(
-      (u) =>
-        u.email.toLowerCase() === trimmed ||
-        (u.studentId && u.studentId.toLowerCase() === trimmed) ||
-        u.name.toLowerCase().includes(trimmed)
-    );
+  const login = (emailInput: string, _password?: string) => {
+    const trimmed = emailInput.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) {
+      return false;
+    }
+
+    const found = savedUsers.find((u) => u.email.toLowerCase() === trimmed);
 
     if (found) {
       setCurrentUser(found);
@@ -189,13 +189,12 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return true;
     } else {
-      // Dynamic student login
-      const isEmail = emailOrId.includes('@');
+      // Dynamic login by email
       const newUser: UserProfile = {
         id: `user-${Date.now()}`,
-        name: isEmail ? emailOrId.split('@')[0] : `Sinh viên ${emailOrId}`,
-        email: isEmail ? emailOrId : `${emailOrId.toLowerCase()}@student.edu.vn`,
-        studentId: isEmail ? '2302' + Math.floor(1000 + Math.random() * 9000) : emailOrId,
+        name: emailInput.split('@')[0],
+        email: emailInput.trim(),
+        studentId: '2302' + Math.floor(1000 + Math.random() * 9000),
         university: 'Đại học Quốc gia',
         major: 'Công nghệ thông tin',
         gender: 'female',

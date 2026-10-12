@@ -94,28 +94,48 @@ export const AuthModal: React.FC = () => {
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-    if (!loginIdentifier.trim()) {
-      setErrorMessage('Vui lòng nhập Email hoặc Mã số sinh viên!');
+    const emailTrimmed = loginIdentifier.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailTrimmed) {
+      setErrorMessage('Vui lòng nhập địa chỉ Email để đăng nhập!');
       return;
     }
 
-    const success = login(loginIdentifier.trim(), loginPassword);
+    if (!emailRegex.test(emailTrimmed)) {
+      setErrorMessage('Địa chỉ Email không hợp lệ (ví dụ: tenban@gmail.com)!');
+      return;
+    }
+
+    const success = login(emailTrimmed, loginPassword);
     if (success) {
-      setSuccessMessage('Đăng nhập thành công!');
+      setSuccessMessage('Đăng nhập bằng Email thành công!');
       setTimeout(() => {
         handleClose();
       }, 500);
     } else {
-      setErrorMessage('Thông tin đăng nhập không hợp lệ.');
+      setErrorMessage('Email đăng nhập không hợp lệ.');
     }
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
+    const emailTrimmed = regEmail.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!regName.trim() || !regEmail.trim()) {
-      setErrorMessage('Vui lòng nhập đầy đủ họ tên và email!');
+    if (!regName.trim() || !emailTrimmed) {
+      setErrorMessage('Vui lòng nhập đầy đủ họ tên và địa chỉ Email!');
+      return;
+    }
+
+    if (!emailRegex.test(emailTrimmed)) {
+      setErrorMessage('Vui lòng nhập địa chỉ Email hợp lệ (ví dụ: tenban@gmail.com)!');
+      return;
+    }
+
+    if (savedUsers.some((u) => u.email.toLowerCase() === emailTrimmed.toLowerCase())) {
+      setErrorMessage('Email này đã được đăng ký. Vui lòng chuyển sang tab Đăng nhập!');
       return;
     }
 
@@ -172,8 +192,8 @@ export const AuthModal: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-sky-200 animate-in fade-in zoom-in-95 duration-150 my-6">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-sky-200 animate-in fade-in zoom-in-95 duration-150 max-h-[92dvh] overflow-y-auto pb-safe">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-sky-100 mb-4">
           <div className="flex items-center gap-2">
@@ -256,12 +276,12 @@ export const AuthModal: React.FC = () => {
         {/* TAB 1: LOGIN */}
         {activeTab === 'login' && (
           <div className="space-y-4">
-            {/* Quick 1-click Demo Profiles for Students */}
+            {/* Quick 1-click Demo Email Accounts */}
             <div className="p-3.5 rounded-2xl bg-linear-to-r from-sky-50/90 to-pink-50/80 border border-sky-200/70">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-semibold text-sky-800 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-pink-500" />
-                  Đăng nhập nhanh tài khoản sinh viên:
+                  Chọn nhanh Email đã lưu:
                 </span>
                 <span className="text-[10px] text-sky-600 font-medium">Bấm để đăng nhập</span>
               </div>
@@ -272,28 +292,28 @@ export const AuthModal: React.FC = () => {
                     type="button"
                     onClick={() => {
                       loginAsDemoUser(u);
-                      setSuccessMessage(`Đã đăng nhập với ${u.name}!`);
+                      setSuccessMessage(`Đã đăng nhập với ${u.email}!`);
                       setTimeout(() => handleClose(), 500);
                     }}
                     className="w-full text-left p-2 rounded-xl bg-white border border-sky-200/70 hover:border-sky-400 hover:shadow-xs transition flex items-center justify-between group"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className="w-7 h-7 rounded-lg text-white text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs"
+                        className="w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs"
                         style={{ backgroundColor: u.avatarColor || '#38bdf8' }}
                       >
                         {u.name.slice(0, 2).toUpperCase()}
                       </div>
-                      <div>
-                        <span className="text-xs font-bold text-slate-800 block line-clamp-1 group-hover:text-sky-700 transition">
-                          {u.name}
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-800 block truncate group-hover:text-sky-700 transition">
+                          {u.email}
                         </span>
-                        <span className="text-[10px] text-slate-400 block line-clamp-1">
-                          {u.university} {u.studentId ? `• MSSV: ${u.studentId}` : ''}
+                        <span className="text-[10px] text-slate-400 block truncate">
+                          {u.name}
                         </span>
                       </div>
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-pink-500 group-hover:translate-x-0.5 transition" />
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-pink-500 group-hover:translate-x-0.5 transition shrink-0" />
                   </button>
                 ))}
               </div>
@@ -302,24 +322,24 @@ export const AuthModal: React.FC = () => {
             <div className="relative flex items-center justify-center my-2">
               <div className="border-t border-sky-100 w-full" />
               <span className="bg-white px-2 text-[11px] text-slate-400 uppercase tracking-wider shrink-0">
-                hoặc nhập thông tin
+                hoặc đăng nhập bằng Email
               </span>
             </div>
 
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Email hoặc Mã số sinh viên (MSSV):
+                  Địa chỉ Email đăng nhập <span className="text-pink-500">*</span>:
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <Mail className="w-4 h-4" />
                   </div>
                   <input
-                    type="text"
+                    type="email"
                     required
                     id="input-login-identifier"
-                    placeholder="Ví dụ: 22021589 hoặc student@edu.vn"
+                    placeholder="Ví dụ: tenban@gmail.com"
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white transition"
@@ -387,7 +407,26 @@ export const AuthModal: React.FC = () => {
           <form onSubmit={handleRegisterSubmit} className="space-y-3">
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Họ và tên sinh viên:
+                Địa chỉ Email đăng ký <span className="text-pink-500">*</span>:
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <input
+                  type="email"
+                  required
+                  placeholder="Ví dụ: thutrang@gmail.com"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-700 block mb-1">
+                Họ và tên <span className="text-pink-500">*</span>:
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -400,34 +439,6 @@ export const AuthModal: React.FC = () => {
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Mã số SV (MSSV):
-                </label>
-                <input
-                  type="text"
-                  placeholder="23021999"
-                  value={regStudentId}
-                  onChange={(e) => setRegStudentId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Email liên hệ:
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="thutrang@gmail.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
                 />
               </div>
             </div>
