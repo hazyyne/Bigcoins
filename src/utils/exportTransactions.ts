@@ -44,7 +44,7 @@ export const exportTransactionsToCSV = (
   if (options?.user) {
     rows.push(
       escapeCSV(
-        `Người dùng: ${options.user.name} - MSSV: ${options.user.studentId || 'N/A'} - Trường: ${options.user.university || 'N/A'}`
+        `Người dùng: ${options.user.name} - Gmail: ${options.user.email}`
       )
     );
   }
@@ -172,7 +172,7 @@ export const exportTransactionsToExcel = (
       <tr><td colspan="8" class="title">${title}</td></tr>
       ${
         options?.user
-          ? `<tr><td colspan="8" class="meta"><b>Chủ tài khoản:</b> ${options.user.name} | <b>MSSV:</b> ${options.user.studentId || 'N/A'} | <b>Trường:</b> ${options.user.university || 'N/A'}</td></tr>`
+          ? `<tr><td colspan="8" class="meta"><b>Chủ tài khoản:</b> ${options.user.name} | <b>Gmail:</b> ${options.user.email}</td></tr>`
           : ''
       }
       <tr><td colspan="8" class="meta"><b>${period}</b> | <b>Thời gian xuất:</b> ${now.toLocaleDateString('vi-VN')} ${now.toLocaleTimeString('vi-VN')}</td></tr>

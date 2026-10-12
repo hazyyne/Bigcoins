@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -13,6 +13,8 @@ import {
   Plus,
   Lock,
   LogIn,
+  Edit3,
+  X,
 } from 'lucide-react';
 import { useExpense } from '../context/ExpenseContext';
 import { formatVND, formatCompactVND, formatDateVi } from '../utils/format';
@@ -23,6 +25,7 @@ export const OverviewTab: React.FC = () => {
     transactions,
     categories,
     accounts,
+    updateAccount,
     budgets,
     selectedMonth,
     totalBalance,
@@ -37,6 +40,34 @@ export const OverviewTab: React.FC = () => {
     setAuthModalMode,
   } = useExpense();
 
+  const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
+  const [balanceInputs, setBalanceInputs] = useState<Record<string, string>>({});
+
+  const openBalanceEditor = () => {
+    if (!isAuthenticated) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    const initial: Record<string, string> = {};
+    accounts.forEach((acc) => {
+      initial[acc.id] = acc.balance > 0 ? String(acc.balance) : '';
+    });
+    setBalanceInputs(initial);
+    setIsBalanceModalOpen(true);
+  };
+
+  const handleSaveBalances = (e: React.FormEvent) => {
+    e.preventDefault();
+    accounts.forEach((acc) => {
+      const val = Number(balanceInputs[acc.id] || 0);
+      if (val !== acc.balance) {
+        updateAccount({ ...acc, balance: val });
+      }
+    });
+    setIsBalanceModalOpen(false);
+  };
+
   // Transactions in current month
   const monthTransactions = useMemo(() => {
     return transactions.filter((t) => t.date.startsWith(selectedMonth));
@@ -45,7 +76,7 @@ export const OverviewTab: React.FC = () => {
   // Total monthly budget
   const totalBudget = useMemo(() => {
     const found = budgets.find((b) => b.month === selectedMonth && !b.categoryId);
-    return found ? found.limitAmount : 4500000;
+    return found ? found.limitAmount : 0;
   }, [budgets, selectedMonth]);
 
   const budgetSpentPercent = totalBudget > 0 ? Math.min(Math.round((monthlyExpense / totalBudget) * 100), 100) : 0;
@@ -148,17 +179,29 @@ export const OverviewTab: React.FC = () => {
         <div className="p-5 rounded-2xl bg-linear-to-br from-sky-50/90 via-white to-sky-100/50 border border-sky-200/80 shadow-xs hover:border-sky-300 transition group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-sky-800/80">Tổng số dư hiện tại</span>
-            <div className="w-9 h-9 rounded-xl bg-sky-100/90 text-sky-600 flex items-center justify-center border border-sky-200/70 group-hover:scale-105 transition">
-              <Wallet className="w-4 h-4" />
-            </div>
+            <button
+              type="button"
+              onClick={openBalanceEditor}
+              title="Tự điền / Cập nhật số dư các ví"
+              className="w-9 h-9 rounded-xl bg-sky-100/90 text-sky-600 hover:bg-sky-200/80 flex items-center justify-center border border-sky-200/70 group-hover:scale-105 transition cursor-pointer"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
           </div>
           <div className="mt-3">
             <h3 className="text-2xl font-bold text-slate-800 tracking-tight">
               {formatVND(totalBalance)}
             </h3>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-              <span>Số dư khả dụng hiện tại</span>
-            </p>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs text-slate-500">Số dư khả dụng</span>
+              <button
+                type="button"
+                onClick={openBalanceEditor}
+                className="text-[11px] font-semibold text-sky-600 hover:text-sky-700 underline cursor-pointer"
+              >
+                Nhập số dư ví
+              </button>
+            </div>
           </div>
         </div>
 
@@ -486,11 +529,81 @@ export const OverviewTab: React.FC = () => {
 
           {recentTransactions.length === 0 && (
             <div className="py-8 text-center text-slate-400 text-xs">
-              Chưa có giao dịch nào được ghi lại.
+              Chưa có giao dịch nào được ghi lại. Hãy nhấn <strong>"+ Ghi thu chi"</strong> hoặc <strong>"Nhập số dư ví"</strong> để bắt đầu!
             </div>
           )}
         </div>
       </div>
+
+      {/* Modal Tự điền số dư các ví / tài khoản */}
+      {isBalanceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-sky-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-sky-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
+                  <Wallet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800">
+                    Tự điền số dư các ví
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Nhập số tiền hiện có của bạn trong từng tài khoản
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBalanceModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-sky-50 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBalances} className="space-y-3.5">
+              {accounts.map((acc) => (
+                <div key={acc.id}>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    {acc.name} (VNĐ):
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    placeholder="Nhập số tiền hiện có (VD: 500000)..."
+                    value={balanceInputs[acc.id] ?? ''}
+                    onChange={(e) =>
+                      setBalanceInputs((prev) => ({
+                        ...prev,
+                        [acc.id]: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3.5 py-2.5 bg-sky-50/40 rounded-xl border border-sky-200 text-sm font-bold text-slate-800 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition"
+                  />
+                </div>
+              ))}
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsBalanceModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-linear-to-r from-sky-500 to-pink-500 hover:from-sky-600 hover:to-pink-600 text-white transition shadow-xs cursor-pointer"
+                >
+                  Lưu số dư
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

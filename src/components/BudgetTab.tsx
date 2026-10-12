@@ -29,7 +29,7 @@ export const BudgetTab: React.FC = () => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCatForEdit, setSelectedCatForEdit] = useState<string | undefined>(undefined);
-  const [editLimitAmount, setEditLimitAmount] = useState<number>(1000000);
+  const [editLimitAmount, setEditLimitAmount] = useState<number>(0);
   const [editThreshold, setEditThreshold] = useState<number>(80);
 
   // Month-filtered expense transactions
@@ -42,7 +42,7 @@ export const BudgetTab: React.FC = () => {
   // Overall monthly budget
   const totalBudget = useMemo(() => {
     const b = budgets.find((item) => item.month === selectedMonth && !item.categoryId);
-    return b ? b.limitAmount : 4500000;
+    return b ? b.limitAmount : 0;
   }, [budgets, selectedMonth]);
 
   const totalUsed = monthlyExpense;
@@ -97,7 +97,7 @@ export const BudgetTab: React.FC = () => {
       setEditThreshold(85);
     } else {
       const existing = budgets.find((b) => b.month === selectedMonth && b.categoryId === catId);
-      setEditLimitAmount(existing ? existing.limitAmount : 1000000);
+      setEditLimitAmount(existing ? existing.limitAmount : 0);
       setEditThreshold(existing ? existing.alertThreshold : 80);
     }
     setIsEditModalOpen(true);
@@ -365,9 +365,10 @@ export const BudgetTab: React.FC = () => {
                   step="10000"
                   min="0"
                   required
-                  value={editLimitAmount}
+                  placeholder="Nhập hạn mức chi tiêu (VD: 3000000)..."
+                  value={editLimitAmount || ''}
                   onChange={(e) => setEditLimitAmount(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                  className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                 />
                 <span className="text-xs text-sky-700 font-medium mt-1 block">
                   ≈ {formatVND(editLimitAmount, true)}

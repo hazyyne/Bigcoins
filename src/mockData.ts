@@ -175,6 +175,11 @@ export const INITIAL_ACCOUNTS: Account[] = [
   },
 ];
 
+export const EMPTY_ACCOUNTS: Account[] = INITIAL_ACCOUNTS.map((acc) => ({
+  ...acc,
+  balance: 0,
+}));
+
 const currentMonth = getCurrentMonthStr();
 const today = new Date();
 const y = today.getFullYear();
@@ -465,10 +470,8 @@ export const DEFAULT_USERS: UserProfile[] = [
   {
     id: 'user-minhanh',
     name: 'Nguyễn Minh Anh',
-    email: 'minhanh.nguyen@student.edu.vn',
-    studentId: '22021589',
-    university: 'ĐH Quốc Gia Hà Nội (UET)',
-    major: 'Công nghệ Thông tin',
+    email: 'minhanh.nguyen@gmail.com',
+    emailVerified: true,
     gender: 'female',
     bgTheme: 'sky-pink',
     avatarColor: '#f472b6',
@@ -477,10 +480,8 @@ export const DEFAULT_USERS: UserProfile[] = [
   {
     id: 'user-quanghuy',
     name: 'Trần Quang Huy',
-    email: 'huy.tq2104@sis.hust.edu.vn',
-    studentId: '20214582',
-    university: 'ĐH Bách Khoa Hà Nội (HUST)',
-    major: 'Kỹ thuật Cơ điện tử',
+    email: 'quanghuy.tran@gmail.com',
+    emailVerified: true,
     gender: 'male',
     bgTheme: 'blue-dream',
     avatarColor: '#38bdf8',
@@ -489,10 +490,8 @@ export const DEFAULT_USERS: UserProfile[] = [
   {
     id: 'user-maiphuong',
     name: 'Lê Mai Phương',
-    email: 'maiphuong.neu@st.neu.edu.vn',
-    studentId: '11213456',
-    university: 'ĐH Kinh tế Quốc dân (NEU)',
-    major: 'Tài chính - Ngân hàng',
+    email: 'maiphuong.le@gmail.com',
+    emailVerified: true,
     gender: 'female',
     bgTheme: 'pink-blossom',
     avatarColor: '#ec4899',

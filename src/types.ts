@@ -98,11 +98,11 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  studentId?: string; // Mã số sinh viên
-  university?: string; // Trường đại học / Học viện
-  major?: string; // Chuyên ngành
+  phone?: string; // Số điện thoại đăng nhập
+  emailVerified?: boolean;
   gender?: GenderType; // Giới tính
   bgTheme?: BgThemeType; // Chế độ hình nền
   avatarColor?: string;
+  avatarUrl?: string; // Ảnh đại diện từ album điện thoại (Data URL)
   joinedDate: string;
 }

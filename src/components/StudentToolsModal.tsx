@@ -21,13 +21,13 @@ export const StudentToolsModal: React.FC = () => {
   const { isStudentToolOpen, setIsStudentToolOpen } = useExpense();
   const [activeSubTab, setActiveSubTab] = useState<'split' | 'tips'>('split');
 
-  // Roommate Bill Split State
-  const [roomRent, setRoomRent] = useState<number>(3000000);
-  const [electricity, setElectricity] = useState<number>(450000);
-  const [water, setWater] = useState<number>(120000);
-  const [internet, setInternet] = useState<number>(150000);
-  const [otherFees, setOtherFees] = useState<number>(50000);
-  const [numPeople, setNumPeople] = useState<number>(2);
+  // Roommate Bill Split State (Empty by default so user enters their own amounts)
+  const [roomRent, setRoomRent] = useState<number>(0);
+  const [electricity, setElectricity] = useState<number>(0);
+  const [water, setWater] = useState<number>(0);
+  const [internet, setInternet] = useState<number>(0);
+  const [otherFees, setOtherFees] = useState<number>(0);
+  const [numPeople, setNumPeople] = useState<number>(1);
   const [copied, setCopied] = useState<boolean>(false);
 
   if (!isStudentToolOpen) return null;
@@ -142,9 +142,11 @@ Mọi người chuyển khoản sớm trước ngày 5 giúp mình nhé! Cảm �
                 <input
                   type="number"
                   step="50000"
-                  value={roomRent}
+                  min="0"
+                  placeholder="Nhập tiền phòng..."
+                  value={roomRent || ''}
                   onChange={(e) => setRoomRent(Number(e.target.value))}
-                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-sky-500"
                 />
               </div>
 
@@ -155,9 +157,11 @@ Mọi người chuyển khoản sớm trước ngày 5 giúp mình nhé! Cảm �
                 <input
                   type="number"
                   step="10000"
-                  value={electricity}
+                  min="0"
+                  placeholder="Nhập tiền điện..."
+                  value={electricity || ''}
                   onChange={(e) => setElectricity(Number(e.target.value))}
-                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-sky-500"
                 />
               </div>
 
@@ -168,9 +172,11 @@ Mọi người chuyển khoản sớm trước ngày 5 giúp mình nhé! Cảm �
                 <input
                   type="number"
                   step="10000"
-                  value={water}
+                  min="0"
+                  placeholder="Nhập tiền nước..."
+                  value={water || ''}
                   onChange={(e) => setWater(Number(e.target.value))}
-                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-sky-500"
                 />
               </div>
 
@@ -181,9 +187,11 @@ Mọi người chuyển khoản sớm trước ngày 5 giúp mình nhé! Cảm �
                 <input
                   type="number"
                   step="10000"
-                  value={internet}
+                  min="0"
+                  placeholder="Nhập tiền mạng..."
+                  value={internet || ''}
                   onChange={(e) => setInternet(Number(e.target.value))}
-                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-sky-500"
                 />
               </div>
             </div>
@@ -196,9 +204,11 @@ Mọi người chuyển khoản sớm trước ngày 5 giúp mình nhé! Cảm �
                 <input
                   type="number"
                   step="5000"
-                  value={otherFees}
+                  min="0"
+                  placeholder="Nhập phí khác..."
+                  value={otherFees || ''}
                   onChange={(e) => setOtherFees(Number(e.target.value))}
-                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-sky-500"
                 />
               </div>
 

@@ -21,6 +21,8 @@ import {
   Users,
   CheckCheck,
   Trash2,
+  Camera,
+  ImagePlus,
 } from 'lucide-react';
 import { useExpense } from '../context/ExpenseContext';
 import { TabType, GenderType, BgThemeType } from '../types';
@@ -59,9 +61,53 @@ export const TopSlidebar: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotifMenuOpen, setIsNotifMenuOpen] = useState(false);
   const [dismissGuestBanner, setDismissGuestBanner] = useState(false);
+
+  // Compress and read image from phone photo album
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxSize = 256;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          updateUserProfile({ avatarUrl: dataUrl });
+        }
+      };
+      if (typeof event.target?.result === 'string') {
+        img.src = event.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -338,6 +384,13 @@ export const TopSlidebar: React.FC = () => {
 
                 {/* User Profile / Login & Logout Component in Top-Right Corner Circular Frame */}
                 <div className="flex items-center" ref={userMenuRef}>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
                   {currentUser ? (
                     <div className="relative">
                       <button
@@ -348,14 +401,22 @@ export const TopSlidebar: React.FC = () => {
                           setIsNotifMenuOpen(false);
                         }}
                         className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full p-0.5 bg-linear-to-tr from-sky-300 via-pink-300 to-sky-200 shadow-xs hover:shadow-md hover:scale-105 transition-all cursor-pointer flex items-center justify-center group"
-                        title={`Tài khoản: ${currentUser.name} (Nhấn để đổi hình nền & giới tính)`}
+                        title={`Tài khoản: ${currentUser.name} (Nhấn để đổi ảnh đại diện & giới tính)`}
                       >
-                        <div
-                          className="w-full h-full rounded-full text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-inner"
-                          style={{ backgroundColor: currentUser.avatarColor || '#38bdf8' }}
-                        >
-                          {currentUser.name.slice(0, 2).toUpperCase()}
-                        </div>
+                        {currentUser.avatarUrl ? (
+                          <img
+                            src={currentUser.avatarUrl}
+                            alt={currentUser.name}
+                            className="w-full h-full rounded-full object-cover border-2 border-white shadow-inner"
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full rounded-full text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-inner"
+                            style={{ backgroundColor: currentUser.avatarColor || '#38bdf8' }}
+                          >
+                            {currentUser.name.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
                         {/* Online & Gender indicator dot on circular frame */}
                         <span
                           className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-bold text-white ${
@@ -370,39 +431,80 @@ export const TopSlidebar: React.FC = () => {
                         </span>
                       </button>
 
-                      {/* Dropdown Menu with Gender & Background Theme Switcher */}
+                      {/* Dropdown Menu with Avatar Photo Picker, Gender & Background Theme Switcher */}
                       {isUserMenuOpen && (
                         <div className="fixed sm:absolute right-3 sm:right-0 top-14 sm:top-auto sm:mt-2.5 w-[calc(100vw-1.5rem)] max-w-xs bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-sky-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-150 max-h-[82vh] overflow-y-auto">
-                      {/* Profile Header with Circular Avatar */}
-                      <div className="flex items-center gap-3 p-3 bg-linear-to-r from-sky-50/90 to-pink-50/90 rounded-2xl border border-sky-100 mb-3">
-                        <div
-                          className="w-12 h-12 rounded-full text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs border-2 border-white ring-2 ring-pink-200/70"
-                          style={{ backgroundColor: currentUser.avatarColor || '#38bdf8' }}
-                        >
-                          {currentUser.name.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <h4 className="text-xs font-bold text-slate-800 truncate">
-                              {currentUser.name}
-                            </h4>
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-sky-100 text-sky-800">
-                              <ShieldCheck className="w-2.5 h-2.5" />
-                              Online
-                            </span>
+                      {/* Profile Header with Circular Avatar & Quick Camera Button */}
+                      <div className="p-3 bg-linear-to-r from-sky-50/90 to-pink-50/90 rounded-2xl border border-sky-100 mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative shrink-0">
+                            {currentUser.avatarUrl ? (
+                              <img
+                                src={currentUser.avatarUrl}
+                                alt={currentUser.name}
+                                className="w-13 h-13 rounded-full object-cover shadow-xs border-2 border-white ring-2 ring-pink-200/70"
+                              />
+                            ) : (
+                              <div
+                                className="w-13 h-13 rounded-full text-white font-bold text-sm flex items-center justify-center shadow-xs border-2 border-white ring-2 ring-pink-200/70"
+                                style={{ backgroundColor: currentUser.avatarColor || '#38bdf8' }}
+                              >
+                                {currentUser.name.slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => avatarInputRef.current?.click()}
+                              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-sky-500 hover:bg-sky-600 text-white border-2 border-white flex items-center justify-center shadow-xs cursor-pointer transition"
+                              title="Chọn ảnh đại diện từ album điện thoại"
+                            >
+                              <Camera className="w-3 h-3" />
+                            </button>
                           </div>
-                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                            {currentUser.email}
-                          </p>
-                          <p className="text-[10px] text-pink-600 font-medium truncate mt-0.5">
-                            Giới tính:{' '}
-                            {currentUser.gender === 'male'
-                              ? 'Nam ♂'
-                              : currentUser.gender === 'other'
-                              ? 'Khác ✦'
-                              : 'Nữ ♀'}
-                            {currentUser.studentId ? ` • MSSV: ${currentUser.studentId}` : ''}
-                          </p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="text-xs font-bold text-slate-800 truncate">
+                                {currentUser.name}
+                              </h4>
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-sky-100 text-sky-800">
+                                <ShieldCheck className="w-2.5 h-2.5" />
+                                Online
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {currentUser.phone ? `SĐT: ${currentUser.phone}` : currentUser.email}
+                            </p>
+                            <p className="text-[10px] text-pink-600 font-medium truncate mt-0.5">
+                              Giới tính:{' '}
+                              {currentUser.gender === 'male'
+                                ? 'Nam ♂'
+                                : currentUser.gender === 'other'
+                                ? 'Khác ✦'
+                                : 'Nữ ♀'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Change Avatar from Phone Album Button */}
+                        <div className="mt-2.5 pt-2 border-t border-sky-200/60 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => avatarInputRef.current?.click()}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200/80 text-[11px] font-semibold transition shadow-2xs cursor-pointer"
+                          >
+                            <ImagePlus className="w-3.5 h-3.5 text-pink-500" />
+                            <span>Đổi ảnh từ Album điện thoại</span>
+                          </button>
+                          {currentUser.avatarUrl && (
+                            <button
+                              type="button"
+                              onClick={() => updateUserProfile({ avatarUrl: undefined })}
+                              className="py-1.5 px-2 rounded-xl bg-white hover:bg-pink-50 text-slate-400 hover:text-pink-600 border border-slate-200 text-[11px] transition cursor-pointer"
+                              title="Xóa ảnh đại diện, dùng chữ cái mặc định"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -439,71 +541,6 @@ export const TopSlidebar: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* 2. Chế độ thay đổi Hình nền (Pastel Wallpapers) */}
-                      <div className="mb-3 px-1">
-                        <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5 mb-1.5">
-                          <Palette className="w-3.5 h-3.5 text-sky-500" />
-                          Thay đổi Hình nền Pastel:
-                        </label>
-                        <div className="grid grid-cols-1 gap-1.5">
-                          {(
-                            [
-                              {
-                                id: 'sky-pink',
-                                label: 'Xanh dương & Hồng phấn (Mặc định)',
-                                preview: 'bg-linear-to-r from-sky-200 via-sky-100 to-pink-200',
-                              },
-                              {
-                                id: 'blue-dream',
-                                label: 'Xanh da trời Mây trắng',
-                                preview: 'bg-linear-to-r from-sky-300 via-cyan-100 to-blue-200',
-                              },
-                              {
-                                id: 'pink-blossom',
-                                label: 'Hồng Đào Sakura',
-                                preview: 'bg-linear-to-r from-pink-300 via-rose-100 to-pink-200',
-                              },
-                              {
-                                id: 'lavender-mint',
-                                label: 'Tím Lavender & Xanh Bạc hà',
-                                preview: 'bg-linear-to-r from-purple-200 via-sky-100 to-emerald-200',
-                              },
-                              {
-                                id: 'peach-cream',
-                                label: 'Cam Đào & Kem sữa',
-                                preview: 'bg-linear-to-r from-rose-200 via-amber-100 to-pink-200',
-                              },
-                            ] as { id: BgThemeType; label: string; preview: string }[]
-                          ).map((theme) => {
-                            const isSelected = (currentUser.bgTheme || 'sky-pink') === theme.id;
-                            return (
-                              <button
-                                key={theme.id}
-                                type="button"
-                                onClick={() => updateUserProfile({ bgTheme: theme.id })}
-                                className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs border transition cursor-pointer ${
-                                  isSelected
-                                    ? 'bg-sky-50/90 border-sky-300 text-slate-800 font-semibold shadow-2xs'
-                                    : 'bg-white border-slate-200/70 text-slate-600 hover:bg-sky-50/40'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className={`w-5 h-5 rounded-full border border-white shadow-xs shrink-0 ${theme.preview}`}
-                                  />
-                                  <span className="truncate">{theme.label}</span>
-                                </div>
-                                {isSelected && (
-                                  <span className="text-[10px] font-bold text-sky-600 px-1.5 py-0.5 rounded-full bg-sky-100">
-                                    Đang dùng
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
                       <div className="border-t border-sky-100 my-2" />
 
                       <div className="space-y-1 text-xs">
@@ -519,19 +556,6 @@ export const TopSlidebar: React.FC = () => {
                         >
                           <User className="w-4 h-4 text-sky-500" />
                           <span>Chỉnh sửa hồ sơ chi tiết</span>
-                        </button>
-                        <button
-                          type="button"
-                          id="btn-user-switch-account"
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            setAuthModalMode('login');
-                            setIsAuthModalOpen(true);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-sky-50 transition text-left cursor-pointer"
-                        >
-                          <UserPlus className="w-4 h-4 text-pink-500" />
-                          <span>Chuyển tài khoản khác</span>
                         </button>
                         <button
                           type="button"

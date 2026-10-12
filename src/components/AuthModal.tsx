@@ -3,30 +3,29 @@ import {
   X,
   LogIn,
   UserPlus,
-  GraduationCap,
   Mail,
+  Phone,
   Lock,
   User,
-  School,
-  BookOpen,
   Eye,
   EyeOff,
   Check,
-  Sparkles,
-  ArrowRight,
   ShieldCheck,
+  KeyRound,
+  RefreshCw,
+  Camera,
+  ImagePlus,
+  Trash2,
 } from 'lucide-react';
 import { useExpense } from '../context/ExpenseContext';
-import { UserProfile, GenderType, BgThemeType } from '../types';
+import { GenderType, BgThemeType } from '../types';
 
 export const AuthModal: React.FC = () => {
   const {
     isAuthModalOpen,
     setIsAuthModalOpen,
     authModalMode,
-    setAuthModalMode,
     login,
-    loginAsDemoUser,
     register,
     savedUsers,
     currentUser,
@@ -34,52 +33,101 @@ export const AuthModal: React.FC = () => {
   } = useExpense();
 
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'profile'>('login');
+  const [authMethod, setAuthMethod] = useState<'phone' | 'gmail'>('phone');
 
   // Login form state
-  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginGmail, setLoginGmail] = useState('');
+  const [loginPhone, setLoginPhone] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Register form state
+  // Register form state (No university, no major, no studentId)
   const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regStudentId, setRegStudentId] = useState('');
-  const [regUniversity, setRegUniversity] = useState('Đại học Bách Khoa');
-  const [regMajor, setRegMajor] = useState('');
+  const [regGmail, setRegGmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
   const [regGender, setRegGender] = useState<GenderType>('female');
   const [regBgTheme, setRegBgTheme] = useState<BgThemeType>('sky-pink');
   const [regPassword, setRegPassword] = useState('');
   const [regAvatarColor, setRegAvatarColor] = useState('#38bdf8');
+  const [regAvatarUrl, setRegAvatarUrl] = useState<string | undefined>(undefined);
 
-  // Edit profile state
+  // OTP State
+  const [verificationStep, setVerificationStep] = useState<'idle' | 'verify-login' | 'verify-register'>('idle');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [pendingIdentifier, setPendingIdentifier] = useState('');
+
+  // Edit profile state (No university, no major)
   const [editName, setEditName] = useState('');
-  const [editUniversity, setEditUniversity] = useState('');
-  const [editStudentId, setEditStudentId] = useState('');
-  const [editMajor, setEditMajor] = useState('');
+  const [editPhone, setEditPhone] = useState('');
   const [editGender, setEditGender] = useState<GenderType>('female');
   const [editBgTheme, setEditBgTheme] = useState<BgThemeType>('sky-pink');
   const [editAvatarColor, setEditAvatarColor] = useState('#38bdf8');
+  const [editAvatarUrl, setEditAvatarUrl] = useState<string | undefined>(undefined);
 
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+  const normalizePhone = (raw: string) => raw.trim().replace(/[\s.-]/g, '').replace(/^\+84/, '0');
+  const phoneRegex = /^0\d{8,10}$/;
+
+  const compressImageFromPhone = (file: File, onDone: (dataUrl: string) => void) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxSize = 256;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          onDone(canvas.toDataURL('image/jpeg', 0.85));
+        }
+      };
+      if (typeof event.target?.result === 'string') {
+        img.src = event.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Sync mode with context
   useEffect(() => {
     if (authModalMode) {
       setActiveTab(authModalMode);
+      setVerificationStep('idle');
+      setErrorMessage('');
+      setSuccessMessage('');
     }
   }, [authModalMode]);
 
   useEffect(() => {
     if (currentUser) {
       setEditName(currentUser.name);
-      setEditUniversity(currentUser.university || '');
-      setEditStudentId(currentUser.studentId || '');
-      setEditMajor(currentUser.major || '');
+      setEditPhone(currentUser.phone || '');
       setEditGender(currentUser.gender || 'female');
       setEditBgTheme(currentUser.bgTheme || 'sky-pink');
       setEditAvatarColor(currentUser.avatarColor || '#38bdf8');
+      setEditAvatarUrl(currentUser.avatarUrl);
     }
   }, [currentUser]);
 
@@ -87,77 +135,176 @@ export const AuthModal: React.FC = () => {
 
   const handleClose = () => {
     setIsAuthModalOpen(false);
+    setVerificationStep('idle');
+    setEnteredOtp('');
     setErrorMessage('');
     setSuccessMessage('');
+  };
+
+  const generateNewOtp = () => {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setGeneratedOtp(code);
+    setEnteredOtp('');
+    return code;
+  };
+
+  // Start Google / Gmail Popup Quick Flow
+  const handleGoogleSignInClick = () => {
+    setErrorMessage('');
+    setAuthMethod('gmail');
+    const targetEmail = (activeTab === 'register' ? regGmail : loginGmail).trim().toLowerCase();
+
+    if (!targetEmail) {
+      setErrorMessage('Vui lòng nhập địa chỉ Gmail của bạn (ví dụ: tenban@gmail.com) để tiếp tục với Google!');
+      return;
+    }
+
+    if (!gmailRegex.test(targetEmail)) {
+      setErrorMessage('Chỉ chấp nhận tài khoản Gmail hợp lệ có đuôi @gmail.com!');
+      return;
+    }
+
+    const code = generateNewOtp();
+    setPendingIdentifier(targetEmail);
+    setVerificationStep(activeTab === 'register' ? 'verify-register' : 'verify-login');
+    setSuccessMessage(`Đã gửi mã 6 chữ số tới ${targetEmail} (Mã: ${code})`);
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-    const emailTrimmed = loginIdentifier.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (authMethod === 'phone') {
+      const cleaned = normalizePhone(loginPhone);
+      if (!cleaned) {
+        setErrorMessage('Vui lòng nhập số điện thoại để đăng nhập!');
+        return;
+      }
+      if (!phoneRegex.test(cleaned)) {
+        setErrorMessage('Vui lòng nhập số điện thoại hợp lệ (9 - 11 chữ số, bắt đầu bằng số 0)!');
+        return;
+      }
+      const code = generateNewOtp();
+      setPendingIdentifier(cleaned);
+      setVerificationStep('verify-login');
+      setSuccessMessage(`Vui lòng nhập mã 6 số đã gửi qua SMS đến ${cleaned} (Mã: ${code})`);
+      return;
+    }
+
+    const emailTrimmed = loginGmail.trim().toLowerCase();
 
     if (!emailTrimmed) {
-      setErrorMessage('Vui lòng nhập địa chỉ Email để đăng nhập!');
+      setErrorMessage('Vui lòng nhập địa chỉ Gmail để đăng nhập!');
       return;
     }
 
-    if (!emailRegex.test(emailTrimmed)) {
-      setErrorMessage('Địa chỉ Email không hợp lệ (ví dụ: tenban@gmail.com)!');
+    if (!gmailRegex.test(emailTrimmed)) {
+      setErrorMessage('Vui lòng sử dụng tài khoản Gmail hợp lệ (có đuôi @gmail.com)!');
       return;
     }
 
-    const success = login(emailTrimmed, loginPassword);
-    if (success) {
-      setSuccessMessage('Đăng nhập bằng Email thành công!');
-      setTimeout(() => {
-        handleClose();
-      }, 500);
-    } else {
-      setErrorMessage('Email đăng nhập không hợp lệ.');
-    }
+    const code = generateNewOtp();
+    setPendingIdentifier(emailTrimmed);
+    setVerificationStep('verify-login');
+    setSuccessMessage(`Vui lòng nhập mã 6 số đã gửi đến ${emailTrimmed} (Mã: ${code})`);
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-    const emailTrimmed = regEmail.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!regName.trim() || !emailTrimmed) {
-      setErrorMessage('Vui lòng nhập đầy đủ họ tên và địa chỉ Email!');
+    if (!regName.trim()) {
+      setErrorMessage('Vui lòng nhập họ và tên của bạn!');
       return;
     }
 
-    if (!emailRegex.test(emailTrimmed)) {
-      setErrorMessage('Vui lòng nhập địa chỉ Email hợp lệ (ví dụ: tenban@gmail.com)!');
+    if (authMethod === 'phone') {
+      const cleaned = normalizePhone(regPhone);
+      if (!cleaned) {
+        setErrorMessage('Vui lòng nhập số điện thoại đăng ký!');
+        return;
+      }
+      if (!phoneRegex.test(cleaned)) {
+        setErrorMessage('Vui lòng nhập số điện thoại hợp lệ (ví dụ: 0912345678)!');
+        return;
+      }
+      if (savedUsers.some((u) => normalizePhone(u.phone || '') === cleaned)) {
+        setErrorMessage('Số điện thoại này đã được đăng ký. Vui lòng chuyển sang tab Đăng nhập!');
+        return;
+      }
+      const code = generateNewOtp();
+      setPendingIdentifier(cleaned);
+      setVerificationStep('verify-register');
+      setSuccessMessage(`Vui lòng nhập mã 6 số gửi qua SMS tới ${cleaned} (Mã: ${code})`);
       return;
     }
 
-    if (savedUsers.some((u) => u.email.toLowerCase() === emailTrimmed.toLowerCase())) {
-      setErrorMessage('Email này đã được đăng ký. Vui lòng chuyển sang tab Đăng nhập!');
+    const emailTrimmed = regGmail.trim().toLowerCase();
+
+    if (!emailTrimmed) {
+      setErrorMessage('Vui lòng nhập địa chỉ Gmail đăng ký!');
       return;
     }
 
-    const success = register(
-      {
-        name: regName.trim(),
-        email: regEmail.trim(),
-        studentId: regStudentId.trim() || undefined,
-        university: regUniversity.trim() || undefined,
-        major: regMajor.trim() || undefined,
-        gender: regGender,
-        bgTheme: regBgTheme,
-        avatarColor: regAvatarColor,
-      },
-      regPassword
-    );
+    if (!gmailRegex.test(emailTrimmed)) {
+      setErrorMessage('Vui lòng đăng ký bằng địa chỉ Gmail hợp lệ (ví dụ: tenban@gmail.com)!');
+      return;
+    }
 
-    if (success) {
-      setSuccessMessage('Đăng ký tài khoản thành công! Chào mừng bạn gia nhập.');
-      setTimeout(() => {
-        handleClose();
-      }, 700);
+    if (savedUsers.some((u) => u.email.toLowerCase() === emailTrimmed)) {
+      setErrorMessage('Tài khoản Gmail này đã được đăng ký. Vui lòng chuyển sang tab Đăng nhập!');
+      return;
+    }
+
+    const code = generateNewOtp();
+    setPendingIdentifier(emailTrimmed);
+    setVerificationStep('verify-register');
+    setSuccessMessage(`Vui lòng nhập mã 6 số gửi tới ${emailTrimmed} (Mã: ${code})`);
+  };
+
+  const handleVerifyOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    if (enteredOtp.trim() !== generatedOtp) {
+      setErrorMessage('Mã không chính xác. Vui lòng kiểm tra lại!');
+      return;
+    }
+
+    if (verificationStep === 'verify-login') {
+      const success = login(pendingIdentifier, loginPassword);
+      if (success) {
+        setSuccessMessage(`Đăng nhập ${pendingIdentifier} thành công!`);
+        setTimeout(() => {
+          handleClose();
+        }, 500);
+      } else {
+        setErrorMessage('Không thể đăng nhập với thông tin này.');
+      }
+    } else if (verificationStep === 'verify-register') {
+      const isPhoneAuth = phoneRegex.test(pendingIdentifier);
+      const displayName =
+        regName.trim() ||
+        (isPhoneAuth ? `Người dùng ${pendingIdentifier.slice(-4)}` : pendingIdentifier.split('@')[0]);
+      const success = register(
+        {
+          name: displayName,
+          email: isPhoneAuth ? `${pendingIdentifier}@phone.vn` : pendingIdentifier,
+          phone: isPhoneAuth ? pendingIdentifier : regPhone.trim() || undefined,
+          emailVerified: true,
+          gender: regGender,
+          bgTheme: regBgTheme,
+          avatarColor: regAvatarColor,
+          avatarUrl: regAvatarUrl,
+        },
+        regPassword
+      );
+      if (success) {
+        setSuccessMessage(`Đăng ký tài khoản thành công!`);
+        setTimeout(() => {
+          handleClose();
+        }, 600);
+      }
     }
   };
 
@@ -167,15 +314,14 @@ export const AuthModal: React.FC = () => {
 
     updateUserProfile({
       name: editName.trim(),
-      university: editUniversity.trim() || undefined,
-      studentId: editStudentId.trim() || undefined,
-      major: editMajor.trim() || undefined,
+      phone: editPhone.trim() ? normalizePhone(editPhone) : undefined,
       gender: editGender,
       bgTheme: editBgTheme,
       avatarColor: editAvatarColor,
+      avatarUrl: editAvatarUrl,
     });
 
-    setSuccessMessage('Cập nhật hồ sơ sinh viên thành công!');
+    setSuccessMessage('Cập nhật hồ sơ thành công!');
     setTimeout(() => {
       setSuccessMessage('');
       handleClose();
@@ -196,20 +342,26 @@ export const AuthModal: React.FC = () => {
       <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-sky-200 animate-in fade-in zoom-in-95 duration-150 max-h-[92dvh] overflow-y-auto pb-safe">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-sky-100 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-linear-to-br from-sky-100 to-pink-100 text-sky-700 flex items-center justify-center border border-sky-200/70">
-              <GraduationCap className="w-4 h-4 text-sky-600" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-linear-to-br from-sky-100 to-pink-100 text-sky-700 flex items-center justify-center border border-sky-200/70">
+              {authMethod === 'phone' ? (
+                <Phone className="w-4 h-4 text-sky-600" />
+              ) : (
+                <Mail className="w-4 h-4 text-sky-600" />
+              )}
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-800">
                 {activeTab === 'profile'
-                  ? 'Hồ sơ sinh viên'
+                  ? 'Hồ sơ cá nhân'
+                  : verificationStep !== 'idle'
+                  ? 'Nhập mã xác nhận'
                   : activeTab === 'register'
-                  ? 'Đăng ký tài khoản sinh viên'
+                  ? 'Đăng ký tài khoản'
                   : 'Đăng nhập tài khoản'}
               </h3>
               <p className="text-[11px] text-slate-400">
-                Quản lý chi tiêu cá nhân an toàn & bảo mật
+                Hỗ trợ đăng nhập bằng Số điện thoại hoặc Gmail
               </p>
             </div>
           </div>
@@ -222,41 +374,81 @@ export const AuthModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Tab switchers if not just profile */}
-        {activeTab !== 'profile' && (
-          <div className="flex items-center p-1 bg-sky-50/80 rounded-2xl border border-sky-100 mb-4">
-            <button
-              type="button"
-              id="tab-auth-login"
-              onClick={() => {
-                setActiveTab('login');
-                setErrorMessage('');
-              }}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-                activeTab === 'login'
-                  ? 'bg-white text-sky-700 shadow-xs border border-sky-200/60'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              Đăng nhập
-            </button>
-            <button
-              type="button"
-              id="tab-auth-register"
-              onClick={() => {
-                setActiveTab('register');
-                setErrorMessage('');
-              }}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-                activeTab === 'register'
-                  ? 'bg-white text-pink-600 shadow-xs border border-pink-200/60'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              Đăng ký sinh viên
-            </button>
+        {/* Tab switchers if not in profile or OTP step */}
+        {activeTab !== 'profile' && verificationStep === 'idle' && (
+          <div className="space-y-2.5 mb-4">
+            <div className="flex items-center p-1 bg-sky-50/80 rounded-2xl border border-sky-100">
+              <button
+                type="button"
+                id="tab-auth-login"
+                onClick={() => {
+                  setActiveTab('login');
+                  setErrorMessage('');
+                  setSuccessMessage('');
+                }}
+                className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                  activeTab === 'login'
+                    ? 'bg-white text-sky-700 shadow-xs border border-sky-200/60'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Đăng nhập
+              </button>
+              <button
+                type="button"
+                id="tab-auth-register"
+                onClick={() => {
+                  setActiveTab('register');
+                  setErrorMessage('');
+                  setSuccessMessage('');
+                }}
+                className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                  activeTab === 'register'
+                    ? 'bg-white text-pink-600 shadow-xs border border-pink-200/60'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                Đăng ký
+              </button>
+            </div>
+
+            {/* Method Toggle: Số điện thoại vs Gmail */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                id="btn-method-phone"
+                onClick={() => {
+                  setAuthMethod('phone');
+                  setErrorMessage('');
+                }}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border transition cursor-pointer ${
+                  authMethod === 'phone'
+                    ? 'bg-linear-to-r from-sky-100/90 to-pink-100/90 border-sky-300 text-slate-800 shadow-2xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Phone className="w-3.5 h-3.5 text-sky-600" />
+                <span>Bằng Số điện thoại</span>
+              </button>
+              <button
+                type="button"
+                id="btn-method-gmail"
+                onClick={() => {
+                  setAuthMethod('gmail');
+                  setErrorMessage('');
+                }}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border transition cursor-pointer ${
+                  authMethod === 'gmail'
+                    ? 'bg-linear-to-r from-sky-100/90 to-pink-100/90 border-pink-300 text-slate-800 shadow-2xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Mail className="w-3.5 h-3.5 text-pink-500" />
+                <span>Bằng Gmail</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -267,85 +459,145 @@ export const AuthModal: React.FC = () => {
           </div>
         )}
         {successMessage && (
-          <div className="mb-4 p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-700 flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-sky-600" />
-            {successMessage}
+          <div className="mb-4 p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-800 flex items-start gap-2">
+            <Check className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+            <span>{successMessage}</span>
           </div>
         )}
 
-        {/* TAB 1: LOGIN */}
-        {activeTab === 'login' && (
-          <div className="space-y-4">
-            {/* Quick 1-click Demo Email Accounts */}
-            <div className="p-3.5 rounded-2xl bg-linear-to-r from-sky-50/90 to-pink-50/80 border border-sky-200/70">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-semibold text-sky-800 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-pink-500" />
-                  Chọn nhanh Email đã lưu:
-                </span>
-                <span className="text-[10px] text-sky-600 font-medium">Bấm để đăng nhập</span>
+        {/* OTP VERIFICATION STEP */}
+        {verificationStep !== 'idle' && (
+          <form onSubmit={handleVerifyOtpSubmit} className="space-y-4">
+            <div className="p-4 rounded-2xl bg-linear-to-r from-sky-50/90 to-pink-50/90 border border-sky-200/80">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800 mb-1">
+                <ShieldCheck className="w-4 h-4 text-sky-600" />
+                <span>Mã xác nhận 6 chữ số</span>
               </div>
-              <div className="space-y-1.5">
-                {savedUsers.slice(0, 3).map((u) => (
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Hệ thống đã gửi mã gồm 6 chữ số đến:{' '}
+                <strong className="text-sky-700">{pendingIdentifier}</strong>
+              </p>
+              <div className="mt-2.5 p-2.5 rounded-xl bg-white border border-sky-200 flex items-center justify-between">
+                <span className="text-[11px] text-slate-500">Mã của bạn:</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm font-bold tracking-widest text-pink-600 bg-pink-50 px-2.5 py-0.5 rounded-lg border border-pink-200">
+                    {generatedOtp}
+                  </span>
                   <button
-                    key={u.id}
                     type="button"
-                    onClick={() => {
-                      loginAsDemoUser(u);
-                      setSuccessMessage(`Đã đăng nhập với ${u.email}!`);
-                      setTimeout(() => handleClose(), 500);
-                    }}
-                    className="w-full text-left p-2 rounded-xl bg-white border border-sky-200/70 hover:border-sky-400 hover:shadow-xs transition flex items-center justify-between group"
+                    onClick={() => setEnteredOtp(generatedOtp)}
+                    className="text-[11px] font-semibold text-sky-600 hover:underline cursor-pointer"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div
-                        className="w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs"
-                        style={{ backgroundColor: u.avatarColor || '#38bdf8' }}
-                      >
-                        {u.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-800 block truncate group-hover:text-sky-700 transition">
-                          {u.email}
-                        </span>
-                        <span className="text-[10px] text-slate-400 block truncate">
-                          {u.name}
-                        </span>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-pink-500 group-hover:translate-x-0.5 transition shrink-0" />
+                    Điền nhanh
                   </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative flex items-center justify-center my-2">
-              <div className="border-t border-sky-100 w-full" />
-              <span className="bg-white px-2 text-[11px] text-slate-400 uppercase tracking-wider shrink-0">
-                hoặc đăng nhập bằng Email
-              </span>
-            </div>
-
-            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Địa chỉ Email đăng nhập <span className="text-pink-500">*</span>:
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="email"
-                    required
-                    id="input-login-identifier"
-                    placeholder="Ví dụ: tenban@gmail.com"
-                    value={loginIdentifier}
-                    onChange={(e) => setLoginIdentifier(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white transition"
-                  />
                 </div>
               </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+                Nhập mã 6 chữ số:
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                  placeholder="Nhập 6 chữ số (ví dụ: 123456)"
+                  value={enteredOtp}
+                  onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm font-mono tracking-widest text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  const newCode = generateNewOtp();
+                  setSuccessMessage(`Đã gửi lại mã mới tới ${pendingIdentifier} (Mã: ${newCode})`);
+                }}
+                className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-800 font-medium cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Gửi lại mã
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setVerificationStep('idle');
+                  setErrorMessage('');
+                  setSuccessMessage('');
+                }}
+                className="text-slate-500 hover:text-slate-700 cursor-pointer"
+              >
+                Quay lại
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              id="btn-verify-otp"
+              className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-linear-to-r from-sky-500 to-pink-500 hover:from-sky-600 hover:to-pink-600 text-white transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Hoàn tất đăng nhập</span>
+            </button>
+          </form>
+        )}
+
+        {/* TAB 1: LOGIN BY PHONE OR GMAIL */}
+        {activeTab === 'login' && verificationStep === 'idle' && (
+          <div className="space-y-4">
+            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+              {authMethod === 'phone' ? (
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Số điện thoại <span className="text-pink-500">*</span>:
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      required
+                      id="input-login-phone"
+                      placeholder="Ví dụ: 0912345678"
+                      value={loginPhone}
+                      onChange={(e) => setLoginPhone(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white transition"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Tài khoản Gmail <span className="text-pink-500">*</span>:
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      id="input-login-identifier"
+                      placeholder="tenban@gmail.com"
+                      value={loginGmail}
+                      onChange={(e) => setLoginGmail(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white transition"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
@@ -358,10 +610,10 @@ export const AuthModal: React.FC = () => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     id="input-login-password"
-                    placeholder="•••••••• (Có thể để trống để thử nghiệm)"
+                    placeholder="••••••••"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    className="w-full pl-9 pr-10 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white transition"
+                    className="w-full pl-9 pr-10 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white transition"
                   />
                   <button
                     type="button"
@@ -381,48 +633,97 @@ export const AuthModal: React.FC = () => {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                   />
-                  <span>Ghi nhớ phiên đăng nhập</span>
+                  <span>Ghi nhớ đăng nhập</span>
                 </label>
-                <span className="text-pink-600 font-medium cursor-pointer hover:underline">
-                  Quên mật khẩu?
-                </span>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-1 space-y-2.5">
                 <button
                   type="submit"
                   id="btn-submit-login"
-                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-linear-to-r from-sky-500 to-pink-500 hover:from-sky-600 hover:to-pink-600 text-white transition shadow-sm flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-linear-to-r from-sky-500 to-pink-500 hover:from-sky-600 hover:to-pink-600 text-white transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span>Đăng nhập</span>
+                  <span>
+                    {authMethod === 'phone' ? 'Đăng nhập bằng Số điện thoại' : 'Đăng nhập bằng Gmail'}
+                  </span>
                 </button>
+
+                {authMethod === 'gmail' && (
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignInClick}
+                    className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-white hover:bg-sky-50/70 text-slate-700 border border-sky-200 transition shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"
+                      />
+                    </svg>
+                    <span>Đăng nhập bằng Google Gmail</span>
+                  </button>
+                )}
               </div>
             </form>
           </div>
         )}
 
-        {/* TAB 2: REGISTER */}
-        {activeTab === 'register' && (
+        {/* TAB 2: REGISTER BY PHONE OR GMAIL */}
+        {activeTab === 'register' && verificationStep === 'idle' && (
           <form onSubmit={handleRegisterSubmit} className="space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Địa chỉ Email đăng ký <span className="text-pink-500">*</span>:
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-4 h-4" />
+            {authMethod === 'phone' ? (
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Số điện thoại đăng ký <span className="text-pink-500">*</span>:
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    required
+                    placeholder="Ví dụ: 0912345678"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
+                  />
                 </div>
-                <input
-                  type="email"
-                  required
-                  placeholder="Ví dụ: thutrang@gmail.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
-                />
               </div>
-            </div>
+            ) : (
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Địa chỉ Gmail đăng ký <span className="text-pink-500">*</span>:
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Ví dụ: thutrang@gmail.com"
+                    value={regGmail}
+                    onChange={(e) => setRegGmail(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
+                  />
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">
@@ -438,90 +739,95 @@ export const AuthModal: React.FC = () => {
                   placeholder="Ví dụ: Hoàng Thu Trang"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Trường Đại học:
-                </label>
-                <input
-                  type="text"
-                  placeholder="ĐH Kinh Tế, ĐH Bách Khoa..."
-                  value={regUniversity}
-                  onChange={(e) => setRegUniversity(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Chuyên ngành:
-                </label>
-                <input
-                  type="text"
-                  placeholder="Marketing, CNTT..."
-                  value={regMajor}
-                  onChange={(e) => setRegMajor(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Giới tính:
-                </label>
-                <select
-                  value={regGender}
-                  onChange={(e) => setRegGender(e.target.value as GenderType)}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
-                >
-                  <option value="female">Nữ ♀</option>
-                  <option value="male">Nam ♂</option>
-                  <option value="other">Khác ✦</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Hình nền yêu thích:
-                </label>
-                <select
-                  value={regBgTheme}
-                  onChange={(e) => setRegBgTheme(e.target.value as BgThemeType)}
-                  className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
-                >
-                  <option value="sky-pink">Xanh & Hồng Pastel</option>
-                  <option value="blue-dream">Xanh Mây Trắng</option>
-                  <option value="pink-blossom">Hồng Đào Sakura</option>
-                  <option value="lavender-mint">Tím & Xanh Bạc Hà</option>
-                  <option value="peach-cream">Cam Đào & Kem</option>
-                </select>
               </div>
             </div>
 
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Màu đại diện:
+                Giới tính:
               </label>
-              <div className="flex items-center gap-2">
-                {colorOptions.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setRegAvatarColor(c.value)}
-                    style={{ backgroundColor: c.value }}
-                    className={`w-7 h-7 rounded-xl transition ${
-                      regAvatarColor === c.value
-                        ? 'ring-2 ring-offset-2 ring-sky-500 scale-110 shadow-xs'
-                        : 'opacity-70 hover:opacity-100'
-                    }`}
-                    title={c.label}
-                  />
-                ))}
+              <select
+                value={regGender}
+                onChange={(e) => setRegGender(e.target.value as GenderType)}
+                className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
+              >
+                <option value="female">Nữ ♀</option>
+                <option value="male">Nam ♂</option>
+                <option value="other">Khác ✦</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+                Ảnh đại diện (Chọn từ Album điện thoại hoặc Màu khung tròn):
+              </label>
+              <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-sky-50/70 border border-sky-100">
+                <div className="relative shrink-0">
+                  {regAvatarUrl ? (
+                    <img
+                      src={regAvatarUrl}
+                      alt="Ảnh đại diện"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs"
+                    />
+                  ) : (
+                    <div
+                      className="w-12 h-12 rounded-full text-white font-bold text-sm flex items-center justify-center border-2 border-white shadow-xs"
+                      style={{ backgroundColor: regAvatarColor }}
+                    >
+                      {(regName || 'SV').slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 text-xs font-semibold cursor-pointer shadow-2xs transition">
+                      <ImagePlus className="w-3.5 h-3.5 text-pink-500" />
+                      <span>Chọn ảnh từ Album</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            compressImageFromPhone(file, (url) => setRegAvatarUrl(url));
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                    {regAvatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setRegAvatarUrl(undefined)}
+                        className="p-1.5 rounded-xl bg-white text-slate-400 hover:text-pink-600 border border-slate-200 transition cursor-pointer"
+                        title="Xóa ảnh"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {colorOptions.map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => setRegAvatarColor(c.value)}
+                        style={{ backgroundColor: c.value }}
+                        className={`w-5 h-5 rounded-full transition ${
+                          regAvatarColor === c.value
+                            ? 'ring-2 ring-offset-1 ring-sky-500 scale-110 shadow-xs'
+                            : 'opacity-70 hover:opacity-100'
+                        }`}
+                        title={c.label}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -531,10 +837,11 @@ export const AuthModal: React.FC = () => {
               </label>
               <input
                 type="password"
+                required
                 placeholder="Tối thiểu 6 ký tự"
                 value={regPassword}
                 onChange={(e) => setRegPassword(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
+                className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white"
               />
             </div>
 
@@ -542,7 +849,7 @@ export const AuthModal: React.FC = () => {
               <button
                 type="submit"
                 id="btn-submit-register"
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-linear-to-r from-pink-500 to-sky-500 hover:from-pink-600 hover:to-sky-600 text-white transition shadow-sm flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-linear-to-r from-pink-500 to-sky-500 hover:from-pink-600 hover:to-sky-600 text-white transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>Hoàn tất đăng ký</span>
@@ -551,22 +858,81 @@ export const AuthModal: React.FC = () => {
           </form>
         )}
 
-        {/* TAB 3: EDIT PROFILE */}
+        {/* TAB 3: EDIT PROFILE (Removed university & major) */}
         {activeTab === 'profile' && currentUser && (
           <form onSubmit={handleProfileSave} className="space-y-3.5">
-            <div className="flex items-center gap-3 p-3 bg-linear-to-r from-sky-50/90 to-pink-50/90 rounded-2xl border border-sky-100">
-              <div
-                className="w-12 h-12 rounded-full text-white font-bold text-base flex items-center justify-center shadow-xs border-2 border-white ring-2 ring-pink-200"
-                style={{ backgroundColor: editAvatarColor || '#38bdf8' }}
-              >
-                {currentUser.name.slice(0, 2).toUpperCase()}
+            <div className="p-3.5 bg-linear-to-r from-sky-50/90 to-pink-50/90 rounded-2xl border border-sky-100 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="relative shrink-0">
+                  {editAvatarUrl ? (
+                    <img
+                      src={editAvatarUrl}
+                      alt={currentUser.name}
+                      className="w-14 h-14 rounded-full object-cover shadow-xs border-2 border-white ring-2 ring-pink-200"
+                    />
+                  ) : (
+                    <div
+                      className="w-14 h-14 rounded-full text-white font-bold text-base flex items-center justify-center shadow-xs border-2 border-white ring-2 ring-pink-200"
+                      style={{ backgroundColor: editAvatarColor || '#38bdf8' }}
+                    >
+                      {currentUser.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <label
+                    className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-sky-500 hover:bg-sky-600 text-white border-2 border-white flex items-center justify-center shadow-xs cursor-pointer transition"
+                    title="Chọn ảnh từ Album điện thoại"
+                  >
+                    <Camera className="w-3 h-3" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          compressImageFromPhone(file, (url) => setEditAvatarUrl(url));
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-sm font-bold text-slate-800 truncate">{currentUser.name}</h4>
+                  <p className="text-xs text-slate-500 truncate mt-0.5">{currentUser.email}</p>
+                  <span className="text-[10px] text-sky-700 font-medium block mt-0.5">
+                    Tham gia từ: {currentUser.joinedDate}
+                  </span>
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-800">{currentUser.name}</h4>
-                <p className="text-xs text-slate-400">{currentUser.email}</p>
-                <span className="text-[10px] text-sky-700 font-medium">
-                  Tham gia từ: {currentUser.joinedDate}
-                </span>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-sky-200/60">
+                <label className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 text-xs font-semibold cursor-pointer shadow-2xs transition">
+                  <ImagePlus className="w-3.5 h-3.5 text-pink-500" />
+                  <span>Chọn ảnh từ Album điện thoại</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        compressImageFromPhone(file, (url) => setEditAvatarUrl(url));
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {editAvatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setEditAvatarUrl(undefined)}
+                    className="py-1.5 px-2.5 rounded-xl bg-white text-slate-400 hover:text-pink-600 border border-slate-200 text-xs transition cursor-pointer"
+                    title="Xóa ảnh đại diện"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -581,6 +947,25 @@ export const AuthModal: React.FC = () => {
                 onChange={(e) => setEditName(e.target.value)}
                 className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
               />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-700 block mb-1">
+                Số điện thoại:
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Phone className="w-3.5 h-3.5" />
+                </div>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="Nhập số điện thoại của bạn"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-white rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
+                />
+              </div>
             </div>
 
             {/* Gender Selection */}
@@ -612,24 +997,6 @@ export const AuthModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Background Wallpaper Selection */}
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Chế độ Hình nền Pastel:
-              </label>
-              <select
-                value={editBgTheme}
-                onChange={(e) => setEditBgTheme(e.target.value as BgThemeType)}
-                className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
-              >
-                <option value="sky-pink">Xanh dương & Hồng phấn (Mặc định)</option>
-                <option value="blue-dream">Xanh da trời Mây trắng</option>
-                <option value="pink-blossom">Hồng Đào Sakura</option>
-                <option value="lavender-mint">Tím Lavender & Xanh Bạc hà</option>
-                <option value="peach-cream">Cam Đào & Kem sữa</option>
-              </select>
-            </div>
-
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">
                 Màu khung tròn đại diện:
@@ -650,43 +1017,6 @@ export const AuthModal: React.FC = () => {
                   />
                 ))}
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Trường Đại học:
-                </label>
-                <input
-                  type="text"
-                  value={editUniversity}
-                  onChange={(e) => setEditUniversity(e.target.value)}
-                  className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Mã số SV (MSSV):
-                </label>
-                <input
-                  type="text"
-                  value={editStudentId}
-                  onChange={(e) => setEditStudentId(e.target.value)}
-                  className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Chuyên ngành:
-              </label>
-              <input
-                type="text"
-                value={editMajor}
-                onChange={(e) => setEditMajor(e.target.value)}
-                className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
-              />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">

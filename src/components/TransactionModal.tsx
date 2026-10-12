@@ -18,7 +18,7 @@ export const TransactionModal: React.FC = () => {
   } = useExpense();
 
   const [type, setType] = useState<TransactionType>('expense');
-  const [amount, setAmount] = useState<number>(35000);
+  const [amount, setAmount] = useState<number>(0);
   const [categoryId, setCategoryId] = useState<string>('');
   const [accountId, setAccountId] = useState<string>('');
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
@@ -37,7 +37,7 @@ export const TransactionModal: React.FC = () => {
       setIsRecurring(!!editingTransaction.isRecurring);
     } else {
       setType('expense');
-      setAmount(35000);
+      setAmount(0);
       const defaultCat = categories.find((c) => c.type === 'expense');
       setCategoryId(defaultCat ? defaultCat.id : categories[0]?.id || '');
       setAccountId(accounts[0]?.id || '');
@@ -154,9 +154,10 @@ export const TransactionModal: React.FC = () => {
                 step="1000"
                 min="1000"
                 required
+                placeholder="Nhập số tiền..."
                 value={amount || ''}
                 onChange={(e) => setAmount(Number(e.target.value))}
-                className="w-full pl-4 pr-12 py-3 bg-sky-50/40 rounded-2xl border border-sky-200 text-xl font-bold text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition"
+                className="w-full pl-4 pr-12 py-3 bg-sky-50/40 rounded-2xl border border-sky-200 text-xl font-bold text-slate-900 placeholder:text-sm placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">
                 ₫

@@ -13,6 +13,7 @@ import {
 import {
   INITIAL_CATEGORIES,
   INITIAL_ACCOUNTS,
+  EMPTY_ACCOUNTS,
   INITIAL_TRANSACTIONS,
   INITIAL_BUDGETS,
   INITIAL_RECURRING,
@@ -171,17 +172,116 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem(STORAGE_KEYS.ALL_USERS, JSON.stringify(savedUsers));
   }, [savedUsers]);
 
-  const login = (emailInput: string, _password?: string) => {
-    const trimmed = emailInput.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmed)) {
+  // Helper to get per-user storage key
+  const getUserKey = (baseKey: string, userId?: string | null) =>
+    userId ? `${baseKey}_${userId}` : baseKey;
+
+  const isDemoUser = (userId?: string | null) =>
+    !!userId && DEFAULT_USERS.some((u) => u.id === userId);
+
+  const initializeFreshUserData = (userId: string, userName: string) => {
+    const freshAccounts = EMPTY_ACCOUNTS.map((acc) => ({ ...acc, balance: 0 }));
+    const freshTransactions: Transaction[] = [];
+    const freshBudgets: Budget[] = [];
+    const freshRecurring: RecurringTransaction[] = [];
+    const welcomeNotif: NotificationItem[] = [
+      {
+        id: `notif-welcome-${Date.now()}`,
+        type: 'input_reminder',
+        title: `Chào mừng ${userName}!`,
+        message:
+          'Tài khoản mới của bạn đã sẵn sàng. Hãy tự điền số dư ban đầu, ngân sách tháng và ghi chép giao dịch đầu tiên nhé!',
+        date: new Date().toISOString().slice(0, 10),
+        isRead: false,
+        priority: 'medium',
+      },
+    ];
+
+    setCategories(INITIAL_CATEGORIES);
+    setAccounts(freshAccounts);
+    setTransactions(freshTransactions);
+    setBudgets(freshBudgets);
+    setRecurring(freshRecurring);
+    setNotifications(welcomeNotif);
+
+    localStorage.setItem(getUserKey(STORAGE_KEYS.CATEGORIES, userId), JSON.stringify(INITIAL_CATEGORIES));
+    localStorage.setItem(getUserKey(STORAGE_KEYS.ACCOUNTS, userId), JSON.stringify(freshAccounts));
+    localStorage.setItem(getUserKey(STORAGE_KEYS.TRANSACTIONS, userId), JSON.stringify(freshTransactions));
+    localStorage.setItem(getUserKey(STORAGE_KEYS.BUDGETS, userId), JSON.stringify(freshBudgets));
+    localStorage.setItem(getUserKey(STORAGE_KEYS.RECURRING, userId), JSON.stringify(freshRecurring));
+    localStorage.setItem(getUserKey(STORAGE_KEYS.NOTIFICATIONS, userId), JSON.stringify(welcomeNotif));
+  };
+
+  const loadUserData = (user: UserProfile | null) => {
+    if (!user) {
+      setCategories(INITIAL_CATEGORIES);
+      setAccounts(EMPTY_ACCOUNTS);
+      setTransactions([]);
+      setBudgets([]);
+      setRecurring([]);
+      setNotifications([]);
+      return;
+    }
+
+    const uid = user.id;
+    const demo = isDemoUser(uid);
+    try {
+      const savedCats = localStorage.getItem(getUserKey(STORAGE_KEYS.CATEGORIES, uid));
+      const savedAccs = localStorage.getItem(getUserKey(STORAGE_KEYS.ACCOUNTS, uid));
+      const savedTxs = localStorage.getItem(getUserKey(STORAGE_KEYS.TRANSACTIONS, uid));
+      const savedBudgets = localStorage.getItem(getUserKey(STORAGE_KEYS.BUDGETS, uid));
+      const savedRec = localStorage.getItem(getUserKey(STORAGE_KEYS.RECURRING, uid));
+      const savedNotifs = localStorage.getItem(getUserKey(STORAGE_KEYS.NOTIFICATIONS, uid));
+
+      setCategories(savedCats ? JSON.parse(savedCats) : INITIAL_CATEGORIES);
+      setAccounts(savedAccs ? JSON.parse(savedAccs) : demo ? INITIAL_ACCOUNTS : EMPTY_ACCOUNTS);
+      setTransactions(savedTxs ? JSON.parse(savedTxs) : demo ? INITIAL_TRANSACTIONS : []);
+      setBudgets(savedBudgets ? JSON.parse(savedBudgets) : demo ? INITIAL_BUDGETS : []);
+      setRecurring(savedRec ? JSON.parse(savedRec) : demo ? INITIAL_RECURRING : []);
+      setNotifications(savedNotifs ? JSON.parse(savedNotifs) : demo ? INITIAL_NOTIFICATIONS : []);
+    } catch {
+      setCategories(INITIAL_CATEGORIES);
+      setAccounts(demo ? INITIAL_ACCOUNTS : EMPTY_ACCOUNTS);
+      setTransactions(demo ? INITIAL_TRANSACTIONS : []);
+      setBudgets(demo ? INITIAL_BUDGETS : []);
+      setRecurring(demo ? INITIAL_RECURRING : []);
+      setNotifications(demo ? INITIAL_NOTIFICATIONS : []);
+    }
+  };
+
+  const login = (identifierInput: string, _password?: string) => {
+    const trimmed = identifierInput.trim();
+    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+    const cleanedPhone = trimmed.replace(/[\s.-]/g, '').replace(/^\+84/, '0');
+    const phoneRegex = /^0\d{8,10}$/;
+
+    const isGmail = gmailRegex.test(trimmed.toLowerCase());
+    const isPhone = phoneRegex.test(cleanedPhone);
+
+    if (!isGmail && !isPhone) {
       return false;
     }
 
-    const found = savedUsers.find((u) => u.email.toLowerCase() === trimmed);
+    const found = savedUsers.find((u) => {
+      if (isGmail && u.email) {
+        return u.email.toLowerCase() === trimmed.toLowerCase();
+      }
+      if (isPhone) {
+        const uPhone = (u.phone || '').replace(/[\s.-]/g, '').replace(/^\+84/, '0');
+        return uPhone === cleanedPhone || u.email === cleanedPhone;
+      }
+      return false;
+    });
 
     if (found) {
-      setCurrentUser(found);
+      const verifiedUser = {
+        ...found,
+        emailVerified: true,
+        phone: isPhone ? cleanedPhone : found.phone,
+      };
+      setCurrentUser(verifiedUser);
+      setSavedUsers((prev) => prev.map((u) => (u.id === found.id ? verifiedUser : u)));
+      loadUserData(verifiedUser);
       try {
         confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
       } catch {
@@ -189,14 +289,13 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return true;
     } else {
-      // Dynamic login by email
+      // Dynamic login by Gmail or Phone Number -> New User starts with clean 0 data
       const newUser: UserProfile = {
         id: `user-${Date.now()}`,
-        name: emailInput.split('@')[0],
-        email: emailInput.trim(),
-        studentId: '2302' + Math.floor(1000 + Math.random() * 9000),
-        university: 'Đại học Quốc gia',
-        major: 'Công nghệ thông tin',
+        name: isGmail ? trimmed.split('@')[0] : `Người dùng ${cleanedPhone.slice(-4)}`,
+        email: isGmail ? trimmed.toLowerCase() : `${cleanedPhone}@phone.vn`,
+        phone: isPhone ? cleanedPhone : undefined,
+        emailVerified: true,
         gender: 'female',
         bgTheme: 'sky-pink',
         avatarColor: '#38bdf8',
@@ -204,6 +303,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
       setSavedUsers((prev) => [...prev, newUser]);
       setCurrentUser(newUser);
+      initializeFreshUserData(newUser.id, newUser.name);
       try {
         confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
       } catch {
@@ -215,6 +315,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const loginAsDemoUser = (user: UserProfile) => {
     setCurrentUser(user);
+    loadUserData(user);
     try {
       confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
     } catch {
@@ -223,8 +324,14 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const register = (data: Omit<UserProfile, 'id' | 'joinedDate'>, _password?: string) => {
+    const cleanedPhone = data.phone
+      ? data.phone.trim().replace(/[\s.-]/g, '').replace(/^\+84/, '0')
+      : undefined;
     const newUser: UserProfile = {
       ...data,
+      email: (data.email || (cleanedPhone ? `${cleanedPhone}@phone.vn` : '')).trim().toLowerCase(),
+      phone: cleanedPhone,
+      emailVerified: true,
       id: `user-${Date.now()}`,
       joinedDate: new Date().toISOString().slice(0, 10),
       gender: data.gender || 'female',
@@ -233,6 +340,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setSavedUsers((prev) => [newUser, ...prev]);
     setCurrentUser(newUser);
+    initializeFreshUserData(newUser.id, newUser.name);
     try {
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
     } catch {
@@ -243,16 +351,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const logout = () => {
     setCurrentUser(null);
-    const notif: NotificationItem = {
-      id: `notif-${Date.now()}`,
-      type: 'tip',
-      title: 'Đã đăng xuất tài khoản',
-      message: 'Bạn đã đăng xuất an toàn khỏi ứng dụng. Đăng nhập lại bất kỳ lúc nào để tiếp tục!',
-      date: new Date().toISOString().slice(0, 10),
-      isRead: false,
-      priority: 'low',
-    };
-    setNotifications((prev) => [notif, ...prev]);
   };
 
   const updateUserProfile = (profile: Partial<UserProfile>) => {
@@ -263,10 +361,11 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
 
-  // Load state from localStorage with fallback to initial student mock data
+  // Load state from localStorage with per-user isolation (new accounts start with 0 instead of sample amounts)
   const [categories, setCategories] = useState<Category[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      const uid = currentUser?.id;
+      const saved = localStorage.getItem(getUserKey(STORAGE_KEYS.CATEGORIES, uid));
       return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
     } catch {
       return INITIAL_CATEGORIES;
@@ -275,73 +374,89 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [accounts, setAccounts] = useState<Account[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-      return saved ? JSON.parse(saved) : INITIAL_ACCOUNTS;
+      const uid = currentUser?.id;
+      const saved = localStorage.getItem(getUserKey(STORAGE_KEYS.ACCOUNTS, uid));
+      if (saved) return JSON.parse(saved);
+      return isDemoUser(uid) ? INITIAL_ACCOUNTS : EMPTY_ACCOUNTS;
     } catch {
-      return INITIAL_ACCOUNTS;
+      return EMPTY_ACCOUNTS;
     }
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-      return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+      const uid = currentUser?.id;
+      const saved = localStorage.getItem(getUserKey(STORAGE_KEYS.TRANSACTIONS, uid));
+      if (saved) return JSON.parse(saved);
+      return isDemoUser(uid) ? INITIAL_TRANSACTIONS : [];
     } catch {
-      return INITIAL_TRANSACTIONS;
+      return [];
     }
   });
 
   const [budgets, setBudgets] = useState<Budget[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.BUDGETS);
-      return saved ? JSON.parse(saved) : INITIAL_BUDGETS;
+      const uid = currentUser?.id;
+      const saved = localStorage.getItem(getUserKey(STORAGE_KEYS.BUDGETS, uid));
+      if (saved) return JSON.parse(saved);
+      return isDemoUser(uid) ? INITIAL_BUDGETS : [];
     } catch {
-      return INITIAL_BUDGETS;
+      return [];
     }
   });
 
   const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.RECURRING);
-      return saved ? JSON.parse(saved) : INITIAL_RECURRING;
+      const uid = currentUser?.id;
+      const saved = localStorage.getItem(getUserKey(STORAGE_KEYS.RECURRING, uid));
+      if (saved) return JSON.parse(saved);
+      return isDemoUser(uid) ? INITIAL_RECURRING : [];
     } catch {
-      return INITIAL_RECURRING;
+      return [];
     }
   });
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-      return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+      const uid = currentUser?.id;
+      const saved = localStorage.getItem(getUserKey(STORAGE_KEYS.NOTIFICATIONS, uid));
+      if (saved) return JSON.parse(saved);
+      return isDemoUser(uid) ? INITIAL_NOTIFICATIONS : [];
     } catch {
-      return INITIAL_NOTIFICATIONS;
+      return [];
     }
   });
 
-  // Sync state changes to localStorage
+  // Sync state changes to localStorage per user
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-  }, [categories]);
+    if (!currentUser) return;
+    localStorage.setItem(getUserKey(STORAGE_KEYS.CATEGORIES, currentUser.id), JSON.stringify(categories));
+  }, [categories, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
-  }, [accounts]);
+    if (!currentUser) return;
+    localStorage.setItem(getUserKey(STORAGE_KEYS.ACCOUNTS, currentUser.id), JSON.stringify(accounts));
+  }, [accounts, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
-  }, [transactions]);
+    if (!currentUser) return;
+    localStorage.setItem(getUserKey(STORAGE_KEYS.TRANSACTIONS, currentUser.id), JSON.stringify(transactions));
+  }, [transactions, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(budgets));
-  }, [budgets]);
+    if (!currentUser) return;
+    localStorage.setItem(getUserKey(STORAGE_KEYS.BUDGETS, currentUser.id), JSON.stringify(budgets));
+  }, [budgets, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.RECURRING, JSON.stringify(recurring));
-  }, [recurring]);
+    if (!currentUser) return;
+    localStorage.setItem(getUserKey(STORAGE_KEYS.RECURRING, currentUser.id), JSON.stringify(recurring));
+  }, [recurring, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-  }, [notifications]);
+    if (!currentUser) return;
+    localStorage.setItem(getUserKey(STORAGE_KEYS.NOTIFICATIONS, currentUser.id), JSON.stringify(notifications));
+  }, [notifications, currentUser]);
 
   // Derived calculations
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
