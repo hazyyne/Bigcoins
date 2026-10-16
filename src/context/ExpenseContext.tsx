@@ -47,7 +47,7 @@ interface ExpenseContextType {
   setIsAuthModalOpen: (open: boolean) => void;
   authModalMode: 'login' | 'register' | 'profile';
   setAuthModalMode: (mode: 'login' | 'register' | 'profile') => void;
-  login: (emailOrId: string, password?: string) => boolean;
+  login: (emailOrId: string, password?: string, autoCreate?: boolean) => boolean;
   loginAsDemoUser: (user: UserProfile) => void;
   register: (data: Omit<UserProfile, 'id' | 'joinedDate'>, password?: string) => boolean;
   logout: () => void;
@@ -249,7 +249,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const login = (identifierInput: string, _password?: string) => {
+  const login = (identifierInput: string, _password?: string, autoCreate = false) => {
     const trimmed = identifierInput.trim();
     const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
     const cleanedPhone = trimmed.replace(/[\s.-]/g, '').replace(/^\+84/, '0');
@@ -288,7 +288,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // ignore
       }
       return true;
-    } else {
+    } else if (autoCreate) {
       // Dynamic login by Gmail or Phone Number -> New User starts with clean 0 data
       const newUser: UserProfile = {
         id: `user-${Date.now()}`,
@@ -310,6 +310,8 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // ignore
       }
       return true;
+    } else {
+      return false;
     }
   };
 

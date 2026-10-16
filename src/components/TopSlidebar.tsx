@@ -559,6 +559,19 @@ export const TopSlidebar: React.FC = () => {
                         </button>
                         <button
                           type="button"
+                          id="btn-user-register-new"
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            setAuthModalMode('register');
+                            setIsAuthModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sky-700 hover:bg-sky-50 transition text-left font-medium cursor-pointer"
+                        >
+                          <UserPlus className="w-4 h-4 text-pink-500" />
+                          <span>Đăng ký tài khoản mới</span>
+                        </button>
+                        <button
+                          type="button"
                           id="btn-user-logout"
                           onClick={() => {
                             setIsUserMenuOpen(false);
@@ -594,7 +607,7 @@ export const TopSlidebar: React.FC = () => {
                       setAuthModalMode('register');
                       setIsAuthModalOpen(true);
                     }}
-                    className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-pink-700 bg-pink-100/70 hover:bg-pink-100 border border-pink-200/80 transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-pink-700 bg-pink-100/70 hover:bg-pink-100 border border-pink-200/80 transition cursor-pointer"
                   >
                     <UserPlus className="w-3.5 h-3.5 text-pink-500" />
                     <span>Đăng ký</span>

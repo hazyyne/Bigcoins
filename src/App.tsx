@@ -84,21 +84,37 @@ const MainContent: React.FC = () => {
           </div>
         </header>
 
-        {/* Centered Screen showing ONLY "Cùng nhau quản lý chi tiêu nhé" */}
+        {/* Centered Screen with prominent Login & Register buttons */}
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 text-center">
-          <div
-            onClick={() => {
-              setAuthModalMode('login');
-              setIsAuthModalOpen(true);
-            }}
-            className="group cursor-pointer p-7 sm:p-12 rounded-3xl bg-white/85 backdrop-blur-md border border-sky-200/80 shadow-sm hover:shadow-md active:scale-[0.99] hover:border-pink-200 transition-all max-w-xl w-full"
-          >
-            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-sky-100 to-pink-100 border border-sky-200/70 flex items-center justify-center mx-auto mb-4 sm:mb-5 shadow-2xs group-hover:scale-105 transition">
+          <div className="p-7 sm:p-12 rounded-3xl bg-white/85 backdrop-blur-md border border-sky-200/80 shadow-sm hover:shadow-md transition-all max-w-xl w-full">
+            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-sky-100 to-pink-100 border border-sky-200/70 flex items-center justify-center mx-auto mb-4 sm:mb-5 shadow-2xs">
               <Heart className="w-6 h-6 text-pink-500" />
             </div>
             <h1 className="text-xl sm:text-3xl font-bold bg-linear-to-r from-sky-600 to-pink-500 bg-clip-text text-transparent tracking-tight leading-snug">
               Cùng nhau quản lý chi tiêu nhé
             </h1>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthModalMode('login');
+                  setIsAuthModalOpen(true);
+                }}
+                className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-500 hover:bg-sky-600 text-white shadow-xs transition active:scale-95 cursor-pointer"
+              >
+                Đăng nhập
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthModalMode('register');
+                  setIsAuthModalOpen(true);
+                }}
+                className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-pink-500 hover:bg-pink-600 text-white shadow-xs transition active:scale-95 cursor-pointer"
+              >
+                Đăng ký tài khoản mới
+              </button>
+            </div>
           </div>
         </main>
 
