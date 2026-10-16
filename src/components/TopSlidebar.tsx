@@ -646,18 +646,10 @@ export const TopSlidebar: React.FC = () => {
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setIsStudentToolOpen(true)}
-                className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-[11px] font-semibold bg-pink-50 text-pink-700 border border-pink-200/80 active:bg-pink-100 transition"
+                className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-[11px] font-semibold bg-pink-50 text-pink-700 border border-pink-200/80 active:bg-pink-100 transition shadow-2xs cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5 text-pink-500" />
                 <span>Chia tiền & Mẹo</span>
-              </button>
-
-              <button
-                onClick={() => setIsAddTxModalOpen(true)}
-                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold bg-linear-to-r from-sky-200/90 to-pink-200/90 text-slate-800 border border-sky-300/80 active:scale-95 transition shadow-2xs"
-              >
-                <Plus className="w-3.5 h-3.5 text-sky-700" />
-                <span>Thêm</span>
               </button>
             </div>
           </div>
@@ -700,8 +692,8 @@ export const TopSlidebar: React.FC = () => {
         </div>
       )}
 
-      {/* Slidebar nằm ở trên là các chức năng (Horizontal sliding tabs bar) */}
-      <div className="relative border-t border-sky-100 bg-linear-to-r from-sky-50/80 via-white to-pink-50/80">
+      {/* Slidebar nằm ở trên là các chức năng (Horizontal sliding tabs bar) - Ẩn trên điện thoại (mobile) */}
+      <div className="hidden md:block relative border-t border-sky-100 bg-linear-to-r from-sky-50/80 via-white to-pink-50/80">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 relative flex items-center">
           {/* Scroll arrow left */}
           <button

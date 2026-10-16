@@ -124,7 +124,7 @@ const MainContent: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-dvh flex flex-col transition-colors duration-300 ${activeBgClass} text-slate-700 pb-20 sm:pb-0`}>
+    <div className={`min-h-dvh flex flex-col transition-colors duration-300 ${activeBgClass} text-slate-700 pb-20 md:pb-0`}>
       {/* Top slidebar navigation containing all requested tabs & functions */}
       <TopSlidebar />
 
@@ -141,7 +141,7 @@ const MainContent: React.FC = () => {
       {/* Mobile Bottom Navigation Bar + Quick Add Button */}
       <nav
         aria-label="Điều hướng di động"
-        className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-sky-200/80 shadow-lg px-2 pt-1.5 pb-safe"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-sky-200/80 shadow-lg px-2 pt-1.5 pb-safe"
       >
         <div className="grid grid-cols-6 items-center gap-0.5 max-w-md mx-auto">
           <button
