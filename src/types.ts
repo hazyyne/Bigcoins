@@ -94,11 +94,18 @@ export type GenderType = 'female' | 'male' | 'other';
 
 export type BgThemeType = 'sky-pink' | 'blue-dream' | 'pink-blossom' | 'lavender-mint' | 'peach-cream';
 
+export interface LoginResult {
+  success: boolean;
+  error?: 'not_found' | 'wrong_password' | 'invalid_input' | 'empty_password';
+  message?: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
   phone?: string; // Số điện thoại đăng nhập
+  password?: string; // Mật khẩu tài khoản
   emailVerified?: boolean;
   gender?: GenderType; // Giới tính
   bgTheme?: BgThemeType; // Chế độ hình nền

@@ -23,6 +23,7 @@ import {
   Trash2,
   Camera,
   ImagePlus,
+  KeyRound,
 } from 'lucide-react';
 import { useExpense } from '../context/ExpenseContext';
 import { TabType, GenderType, BgThemeType } from '../types';
@@ -559,16 +560,16 @@ export const TopSlidebar: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          id="btn-user-register-new"
+                          id="btn-user-change-password"
                           onClick={() => {
                             setIsUserMenuOpen(false);
-                            setAuthModalMode('register');
+                            setAuthModalMode('change_password');
                             setIsAuthModalOpen(true);
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sky-700 hover:bg-sky-50 transition text-left font-medium cursor-pointer"
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-amber-50 transition text-left cursor-pointer font-medium"
                         >
-                          <UserPlus className="w-4 h-4 text-pink-500" />
-                          <span>Đăng ký tài khoản mới</span>
+                          <KeyRound className="w-4 h-4 text-amber-500" />
+                          <span>Đổi mật khẩu tài khoản</span>
                         </button>
                         <button
                           type="button"

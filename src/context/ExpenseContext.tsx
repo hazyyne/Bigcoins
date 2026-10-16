@@ -9,6 +9,7 @@ import {
   NotificationItem,
   TabType,
   UserProfile,
+  LoginResult,
 } from '../types';
 import {
   INITIAL_CATEGORIES,
@@ -45,13 +46,23 @@ interface ExpenseContextType {
   savedUsers: UserProfile[];
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
-  authModalMode: 'login' | 'register' | 'profile';
-  setAuthModalMode: (mode: 'login' | 'register' | 'profile') => void;
-  login: (emailOrId: string, password?: string, autoCreate?: boolean) => boolean;
+  authModalMode: 'login' | 'register' | 'profile' | 'forgot_password' | 'change_password';
+  setAuthModalMode: (mode: 'login' | 'register' | 'profile' | 'forgot_password' | 'change_password') => void;
+  login: (
+    emailOrId: string,
+    password?: string,
+    autoCreate?: boolean,
+    bypassPassword?: boolean
+  ) => LoginResult;
   loginAsDemoUser: (user: UserProfile) => void;
   register: (data: Omit<UserProfile, 'id' | 'joinedDate'>, password?: string) => boolean;
   logout: () => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
+  changePassword: (oldPassword: string, newPassword: string) => { success: boolean; message: string };
+  resetPassword: (
+    identifier: string,
+    newPassword: string
+  ) => { success: boolean; message: string; user?: UserProfile };
 
   // Modals state
   isAddTxModalOpen: boolean;
@@ -136,14 +147,23 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isTransferModalOpen, setIsTransferModalOpen] = useState<boolean>(false);
   const [isStudentToolOpen, setIsStudentToolOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'profile'>('login');
+  const [authModalMode, setAuthModalMode] = useState<
+    'login' | 'register' | 'profile' | 'forgot_password' | 'change_password'
+  >('login');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
   // Authentication State (Defaults to null so user is in Guest/Basic mode until login)
   const [savedUsers, setSavedUsers] = useState<UserProfile[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ALL_USERS);
-      return saved ? JSON.parse(saved) : DEFAULT_USERS;
+      if (saved) {
+        const parsed: UserProfile[] = JSON.parse(saved);
+        return parsed.map((u) => ({
+          ...u,
+          password: u.password || '123456',
+        }));
+      }
+      return DEFAULT_USERS;
     } catch {
       return DEFAULT_USERS;
     }
@@ -249,7 +269,12 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const login = (identifierInput: string, _password?: string, autoCreate = false) => {
+  const login = (
+    identifierInput: string,
+    password?: string,
+    autoCreate = false,
+    bypassPassword = false
+  ): LoginResult => {
     const trimmed = identifierInput.trim();
     const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
     const cleanedPhone = trimmed.replace(/[\s.-]/g, '').replace(/^\+84/, '0');
@@ -259,7 +284,11 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const isPhone = phoneRegex.test(cleanedPhone);
 
     if (!isGmail && !isPhone) {
-      return false;
+      return {
+        success: false,
+        error: 'invalid_input',
+        message: 'Vui lòng nhập số điện thoại hoặc Gmail hợp lệ!',
+      };
     }
 
     const found = savedUsers.find((u) => {
@@ -274,6 +303,24 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
 
     if (found) {
+      // Password verification: If bypassPassword is true (e.g. 1-click Google SSO), skip password check
+      if (!bypassPassword) {
+        const enteredPassword = (password || '').trim();
+        const expectedPassword = (found.password || '123456').trim();
+        const isMatch =
+          enteredPassword === expectedPassword ||
+          (isDemoUser(found.id) &&
+            (enteredPassword === '123456' || enteredPassword === 'password123'));
+
+        if (!isMatch) {
+          return {
+            success: false,
+            error: 'wrong_password',
+            message: 'Sai mật khẩu! Vui lòng kiểm tra lại mật khẩu của bạn.',
+          };
+        }
+      }
+
       const verifiedUser = {
         ...found,
         emailVerified: true,
@@ -287,7 +334,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } catch {
         // ignore
       }
-      return true;
+      return { success: true };
     } else if (autoCreate) {
       // Dynamic login by Gmail or Phone Number -> New User starts with clean 0 data
       const newUser: UserProfile = {
@@ -295,6 +342,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         name: isGmail ? trimmed.split('@')[0] : `Người dùng ${cleanedPhone.slice(-4)}`,
         email: isGmail ? trimmed.toLowerCase() : `${cleanedPhone}@phone.vn`,
         phone: isPhone ? cleanedPhone : undefined,
+        password: password?.trim() || '123456',
         emailVerified: true,
         gender: 'female',
         bgTheme: 'sky-pink',
@@ -309,9 +357,13 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } catch {
         // ignore
       }
-      return true;
+      return { success: true };
     } else {
-      return false;
+      return {
+        success: false,
+        error: 'not_found',
+        message: 'Tài khoản chưa được đăng ký trong hệ thống!',
+      };
     }
   };
 
@@ -325,7 +377,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const register = (data: Omit<UserProfile, 'id' | 'joinedDate'>, _password?: string) => {
+  const register = (data: Omit<UserProfile, 'id' | 'joinedDate'>, password?: string) => {
     const cleanedPhone = data.phone
       ? data.phone.trim().replace(/[\s.-]/g, '').replace(/^\+84/, '0')
       : undefined;
@@ -333,6 +385,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...data,
       email: (data.email || (cleanedPhone ? `${cleanedPhone}@phone.vn` : '')).trim().toLowerCase(),
       phone: cleanedPhone,
+      password: password?.trim() || '123456',
       emailVerified: true,
       id: `user-${Date.now()}`,
       joinedDate: new Date().toISOString().slice(0, 10),
@@ -360,6 +413,71 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const updated = { ...currentUser, ...profile };
     setCurrentUser(updated);
     setSavedUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+  };
+
+  const changePassword = (
+    oldPassword: string,
+    newPassword: string
+  ): { success: boolean; message: string } => {
+    if (!currentUser) {
+      return { success: false, message: 'Vui lòng đăng nhập trước khi đổi mật khẩu!' };
+    }
+    const currentPass = currentUser.password || '123456';
+    if (oldPassword.trim() !== currentPass) {
+      return { success: false, message: 'Mật khẩu hiện tại không chính xác!' };
+    }
+    if (newPassword.trim().length < 4) {
+      return { success: false, message: 'Mật khẩu mới phải có ít nhất 4 ký tự!' };
+    }
+    if (newPassword.trim() === currentPass) {
+      return { success: false, message: 'Mật khẩu mới phải khác mật khẩu hiện tại!' };
+    }
+
+    const updatedUser = { ...currentUser, password: newPassword.trim() };
+    setCurrentUser(updatedUser);
+    setSavedUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+    return { success: true, message: 'Đổi mật khẩu thành công!' };
+  };
+
+  const resetPassword = (
+    identifier: string,
+    newPassword: string
+  ): { success: boolean; message: string; user?: UserProfile } => {
+    const trimmed = identifier.trim();
+    if (!trimmed) {
+      return { success: false, message: 'Vui lòng nhập Số điện thoại hoặc Gmail!' };
+    }
+    if (newPassword.trim().length < 4) {
+      return { success: false, message: 'Mật khẩu mới phải có ít nhất 4 ký tự!' };
+    }
+
+    const cleanedPhone = trimmed.replace(/[\s.-]/g, '').replace(/^\+84/, '0');
+    const emailLower = trimmed.toLowerCase();
+
+    const targetUser = savedUsers.find((u) => {
+      const uPhone = u.phone ? u.phone.replace(/[\s.-]/g, '').replace(/^\+84/, '0') : '';
+      if (cleanedPhone && uPhone && uPhone === cleanedPhone) return true;
+      if (u.email && u.email.toLowerCase() === emailLower) return true;
+      return false;
+    });
+
+    if (!targetUser) {
+      return {
+        success: false,
+        message: `Không tìm thấy tài khoản với thông tin "${trimmed}". Vui lòng kiểm tra lại số điện thoại hoặc Gmail!`,
+      };
+    }
+
+    const updated: UserProfile = { ...targetUser, password: newPassword.trim() };
+    setSavedUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+    if (currentUser?.id === updated.id) {
+      setCurrentUser(updated);
+    }
+    return {
+      success: true,
+      message: `Đặt lại mật khẩu thành công cho tài khoản "${targetUser.name}"! Bạn có thể đăng nhập ngay.`,
+      user: updated,
+    };
   };
 
 
@@ -894,6 +1012,8 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         register,
         logout,
         updateUserProfile,
+        changePassword,
+        resetPassword,
 
         isAddTxModalOpen,
         setIsAddTxModalOpen,
