@@ -124,7 +124,7 @@ const MainContent: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-dvh flex flex-col transition-colors duration-300 ${activeBgClass} text-slate-700 pb-20 md:pb-0`}>
+    <div className={`min-h-dvh flex flex-col transition-colors duration-300 ${activeBgClass} text-slate-700 pb-24 md:pb-0`}>
       {/* Top slidebar navigation containing all requested tabs & functions */}
       <TopSlidebar />
 
@@ -141,85 +141,90 @@ const MainContent: React.FC = () => {
       {/* Mobile Bottom Navigation Bar + Quick Add Button */}
       <nav
         aria-label="Điều hướng di động"
-        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-sky-200/80 shadow-lg px-2 pt-1.5 pb-safe"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-sky-200/80 shadow-lg px-2 pb-safe"
       >
-        <div className="grid grid-cols-6 items-center gap-0.5 max-w-md mx-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('overview')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
-              activeTab === 'overview'
-                ? 'text-sky-700 bg-sky-50/90'
-                : 'text-slate-500 active:bg-slate-50'
-            }`}
-          >
-            <LayoutDashboard className={`w-4 h-4 mb-0.5 ${activeTab === 'overview' ? 'text-sky-600' : 'text-slate-400'}`} />
-            <span className="truncate">Tổng quan</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('transactions')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
-              activeTab === 'transactions'
-                ? 'text-sky-700 bg-sky-50/90'
-                : 'text-slate-500 active:bg-slate-50'
-            }`}
-          >
-            <Receipt className={`w-4 h-4 mb-0.5 ${activeTab === 'transactions' ? 'text-sky-600' : 'text-slate-400'}`} />
-            <span className="truncate">Giao dịch</span>
-          </button>
-
-          {/* Center Quick Add Transaction Button */}
-          <div className="flex items-center justify-center">
+        <div className="max-w-md mx-auto relative">
+          {/* Dấu cộng (+) nằm ở chính giữa trên cùng */}
+          <div className="flex justify-center -mt-5 mb-0.5">
             <button
               type="button"
+              id="btn-mobile-quick-add"
               onClick={() => setIsAddTxModalOpen(true)}
-              className="w-11 h-11 -mt-3 rounded-full bg-linear-to-r from-sky-300 to-pink-300 text-slate-800 border-2 border-white flex items-center justify-center shadow-md active:scale-95 transition"
+              className="w-11 h-11 rounded-full bg-linear-to-r from-sky-400 via-sky-300 to-pink-300 text-slate-800 border-[3px] border-white flex items-center justify-center shadow-md active:scale-95 transition cursor-pointer hover:scale-105"
               aria-label="Thêm giao dịch"
+              title="Thêm giao dịch"
             >
-              <Plus className="w-5 h-5 text-slate-800" />
+              <Plus className="w-5 h-5 text-slate-800 stroke-[2.5]" />
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('statistics')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
-              activeTab === 'statistics'
-                ? 'text-sky-700 bg-sky-50/90'
-                : 'text-slate-500 active:bg-slate-50'
-            }`}
-          >
-            <PieChart className={`w-4 h-4 mb-0.5 ${activeTab === 'statistics' ? 'text-pink-500' : 'text-slate-400'}`} />
-            <span className="truncate">Thống kê</span>
-          </button>
+          {/* 5 mục chia đều tỉ lệ ở dưới */}
+          <div className="grid grid-cols-5 items-center gap-0.5 pb-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('overview')}
+              className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+                activeTab === 'overview'
+                  ? 'text-sky-700 bg-sky-50/90'
+                  : 'text-slate-500 active:bg-slate-50'
+              }`}
+            >
+              <LayoutDashboard className={`w-4 h-4 mb-0.5 ${activeTab === 'overview' ? 'text-sky-600' : 'text-slate-400'}`} />
+              <span className="truncate">Tổng quan</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('budget')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
-              activeTab === 'budget'
-                ? 'text-sky-700 bg-sky-50/90'
-                : 'text-slate-500 active:bg-slate-50'
-            }`}
-          >
-            <Target className={`w-4 h-4 mb-0.5 ${activeTab === 'budget' ? 'text-pink-500' : 'text-slate-400'}`} />
-            <span className="truncate">Ngân sách</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('transactions')}
+              className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+                activeTab === 'transactions'
+                  ? 'text-sky-700 bg-sky-50/90'
+                  : 'text-slate-500 active:bg-slate-50'
+              }`}
+            >
+              <Receipt className={`w-4 h-4 mb-0.5 ${activeTab === 'transactions' ? 'text-sky-600' : 'text-slate-400'}`} />
+              <span className="truncate">Giao dịch</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('categories')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
-              activeTab === 'categories'
-                ? 'text-sky-700 bg-sky-50/90'
-                : 'text-slate-500 active:bg-slate-50'
-            }`}
-          >
-            <Tags className={`w-4 h-4 mb-0.5 ${activeTab === 'categories' ? 'text-sky-600' : 'text-slate-400'}`} />
-            <span className="truncate">Danh mục</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('statistics')}
+              className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+                activeTab === 'statistics'
+                  ? 'text-sky-700 bg-sky-50/90'
+                  : 'text-slate-500 active:bg-slate-50'
+              }`}
+            >
+              <PieChart className={`w-4 h-4 mb-0.5 ${activeTab === 'statistics' ? 'text-pink-500' : 'text-slate-400'}`} />
+              <span className="truncate">Thống kê</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('budget')}
+              className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+                activeTab === 'budget'
+                  ? 'text-sky-700 bg-sky-50/90'
+                  : 'text-slate-500 active:bg-slate-50'
+              }`}
+            >
+              <Target className={`w-4 h-4 mb-0.5 ${activeTab === 'budget' ? 'text-pink-500' : 'text-slate-400'}`} />
+              <span className="truncate">Ngân sách</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('categories')}
+              className={`flex flex-col items-center justify-center py-1.5 rounded-xl text-[10px] font-semibold transition ${
+                activeTab === 'categories'
+                  ? 'text-sky-700 bg-sky-50/90'
+                  : 'text-slate-500 active:bg-slate-50'
+              }`}
+            >
+              <Tags className={`w-4 h-4 mb-0.5 ${activeTab === 'categories' ? 'text-sky-600' : 'text-slate-400'}`} />
+              <span className="truncate">Danh mục</span>
+            </button>
+          </div>
         </div>
       </nav>
 
